@@ -57,6 +57,10 @@ function normalise_site_url(u) {
 function is_paired(status) {
 	const here = normalise_site_url(window.location.origin);
 	const paired = (status && status.paired_sites) || [];
+	console.log(status);
+	console.log(paired);
+	console.log(here);
+	console.log(paired.some((s) => normalise_site_url(s) === here))
 	return paired.some((s) => normalise_site_url(s) === here);
 }
 
@@ -81,11 +85,13 @@ async function auto_pair() {
 			site_url: window.location.origin,
 		}),
 	});
+	console.log(resp);
+	const body = await resp.json().catch(() => ({}));
+	if (resp.ok && body && body.site_token) {
+		window.localStorage.setItem("dsc_site_token", body.site_token);
+	}
 	if (!resp.ok) {
-		let detail = "";
-		try {
-			detail = (await resp.json()).message || "";
-		} catch (e) {}
+		let detail = body.message || body.error || "";
 		throw new Error(
 			__("Could not pair this computer with the site.") + (detail ? " " + detail : "")
 		);
@@ -101,9 +107,9 @@ async function ensure_paired() {
 			)
 		);
 	}
-	if (!is_paired(status)) {
-		await auto_pair();
-	}
+	// if (!is_paired(status)) {
+	// 	await auto_pair();
+	// }
 }
 
 async function fetch_token_certs() {
@@ -120,10 +126,13 @@ async function fetch_token_certs() {
 			__("Cannot reach the dsc-bridge agent at {0}. Is it running and is the token plugged in?", [url])
 		);
 	}
+	const body = await resp.json().catch(() => ({}));
+	if (resp.ok && body && body.site_token) {
+		window.localStorage.setItem("dsc_site_token", body.site_token);
+	}
 	if (!resp.ok) {
 		throw new Error(__("The agent could not read certificates from the token (HTTP {0}).", [resp.status]));
 	}
-	const body = await resp.json();
 	const certs = (body && body.certs) || [];
 	if (!certs.length) {
 		throw new Error(__("No certificate found on the connected token."));
