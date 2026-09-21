@@ -27,8 +27,7 @@
    "label": "User",
    "options": "User",
    "read_only": 1,
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "holder_name",
@@ -97,7 +96,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-19 17:07:52.009900",
+ "modified": "2026-09-21 17:49:13.823300",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC User Certificate",
