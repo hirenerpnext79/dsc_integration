@@ -16,7 +16,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "DSC User Certificate",
-   "link_count": 1,
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -30,9 +30,19 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "DSC Registration",
+   "link_count": 0,
+   "link_to": "DSC Registration",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-19 17:50:56.425872",
+ "modified": "2026-09-21 14:35:17.743997",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "Digital Signature Certificate",
