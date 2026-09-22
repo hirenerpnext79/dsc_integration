@@ -30,7 +30,7 @@ app_license = "mit"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/dsc_integration/css/dsc_integration.css"
-# web_include_js = "/assets/dsc_integration/js/dsc_integration.js"
+web_include_js = "/assets/dsc_integration/js/dsc_login.js"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "dsc_integration/public/scss/website"
@@ -247,3 +247,5 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+# DSC Login Validation
+before_request = ["dsc_integration.utils.login.check_mac_before_login"]

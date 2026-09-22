@@ -27,7 +27,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "MAC Address",
-   "read_only": 1
+   "read_only": 1,
+   "unique": 1
   },
   {
    "fieldname": "device_name",
@@ -111,7 +112,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-22 14:46:41.115915",
+ "modified": "2026-09-22 15:09:21.132701",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "HNS Device Map",

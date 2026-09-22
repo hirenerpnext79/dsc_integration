@@ -448,6 +448,20 @@ func readJSON(r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
+func (h *Handlers) HandleMacAddress(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	
+	mac := getMacAddress()
+	if mac == "" {
+		writeErrorMsg(w, ErrInternalError, "could not retrieve MAC address", http.StatusInternalServerError)
+		return
+	}
+	
+	writeJSON(w, http.StatusOK, map[string]string{"mac_address": mac})
+}
 
 func getMacAddress() string {
 	interfaces, err := net.Interfaces()

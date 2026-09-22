@@ -22,6 +22,7 @@ func StartServer(cfg *Config, tlsCert tls.Certificate, agentFP string, pkcs11Han
 	mux.HandleFunc("/v1/certs", handlers.HandleCerts)
 	mux.HandleFunc("/v1/pair", handlers.HandlePair)
 	mux.HandleFunc("/v1/sign", handlers.HandleSign)
+	mux.HandleFunc("/v1/mac_address", handlers.HandleMacAddress)
 
 	// Wrap with security middleware
 	handler := corsMiddleware(securityMiddleware(mux, ks), ks)
@@ -51,8 +52,8 @@ func securityMiddleware(next http.Handler, ks *Keystore) http.Handler {
 			return
 		}
 
-		// /v1/status is also accessible without token for agent detection
-		if r.URL.Path == "/v1/status" && r.Method == http.MethodGet {
+		// /v1/status and /v1/mac_address are accessible without token for agent detection/login
+		if (r.URL.Path == "/v1/status" || r.URL.Path == "/v1/mac_address") && r.Method == http.MethodGet {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -139,7 +140,7 @@ func corsOriginAllowed(origin, path string, ks *Keystore) bool {
 		return true
 	}
 	switch path {
-	case "/v1/pair", "/v1/status":
+	case "/v1/pair", "/v1/status", "/v1/mac_address":
 		return true
 	default:
 		return false
