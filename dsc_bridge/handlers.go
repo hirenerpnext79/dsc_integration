@@ -1,6 +1,15 @@
 package main
 
 import (
+	"os/user"
+	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
+
+	"net"
+	"os"
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -27,12 +36,32 @@ type Handlers struct {
 
 // --- GET /v1/status ---
 
+type TechDetails struct {
+	TotalRAMGB   float64 `json:"total_ram_gb"`
+	UsedRAMGB    float64 `json:"used_ram_gb"`
+	TotalDiskGB  float64 `json:"total_disk_gb"`
+	DiskDrives   string  `json:"disk_drives"`
+	CPUModel     string  `json:"cpu_model"`
+	CPUCores     int     `json:"cpu_cores"`
+	CPUMhz       float64 `json:"cpu_mhz"`
+	OSVersion    string  `json:"os_version"`
+	KernelVer    string  `json:"kernel_version"`
+	Uptime       uint64  `json:"uptime"`
+	BootTime     uint64  `json:"boot_time"`
+	SystemArch   string  `json:"system_arch"`
+	Interfaces   string  `json:"interfaces"`
+	LoggedUsers  string  `json:"logged_users"`
+}
+
 type StatusResponse struct {
 	AgentVersion   string      `json:"agent_version"`
 	Platform       string      `json:"platform"`
 	PairedSites    []string    `json:"paired_sites"`
 	TokensDetected []TokenInfo `json:"tokens_detected"`
 	PKCS11Libs     []string    `json:"pkcs11_libs_loaded"`
+	MacAddress     string      `json:"mac_address,omitempty"`
+	Hostname       string      `json:"hostname,omitempty"`
+	TechDetails    TechDetails `json:"tech_details"`
 }
 
 func (h *Handlers) HandleStatus(w http.ResponseWriter, r *http.Request) {
@@ -41,12 +70,16 @@ func (h *Handlers) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hostname, _ := os.Hostname()
 	resp := StatusResponse{
 		AgentVersion:   AgentVersion,
 		Platform:       runtime.GOOS,
 		PairedSites:    h.ks.ListSiteURLs(),
 		TokensDetected: h.pkcs11.DetectTokens(),
 		PKCS11Libs:     h.pkcs11.LoadedLibs(),
+		MacAddress:     getMacAddress(),
+		Hostname:       hostname,
+		TechDetails:    getTechDetails(),
 	}
 
 	// Ensure non-nil slices for JSON
@@ -415,3 +448,87 @@ func readJSON(r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
+
+func getMacAddress() string {
+	interfaces, err := net.Interfaces()
+	if err == nil {
+		for _, i := range interfaces {
+			if i.Flags&net.FlagUp != 0 && bytes.Compare(i.HardwareAddr, nil) != 0 {
+				return i.HardwareAddr.String()
+			}
+		}
+	}
+	return ""
+}
+
+func getTechDetails() TechDetails {
+	var details TechDetails
+
+	if v, err := mem.VirtualMemory(); err == nil {
+		details.TotalRAMGB = float64(v.Total) / (1024 * 1024 * 1024)
+		details.UsedRAMGB = float64(v.Used) / (1024 * 1024 * 1024)
+	}
+
+	if parts, err := disk.Partitions(false); err == nil {
+		var drives []string
+		var totalDisk float64
+		for _, p := range parts {
+			if u, err := disk.Usage(p.Mountpoint); err == nil {
+				totalDisk += float64(u.Total) / (1024 * 1024 * 1024)
+				driveStr := fmt.Sprintf("%s (%s): %.2fGB/%.2fGB used", p.Mountpoint, p.Fstype, float64(u.Used)/(1024*1024*1024), float64(u.Total)/(1024*1024*1024))
+				drives = append(drives, driveStr)
+			}
+		}
+		details.TotalDiskGB = totalDisk
+		details.DiskDrives = strings.Join(drives, " | ")
+	}
+
+	if c, err := cpu.Info(); err == nil && len(c) > 0 {
+		details.CPUModel = c[0].ModelName
+		details.CPUCores = int(c[0].Cores)
+		details.CPUMhz = c[0].Mhz
+	}
+	
+	if h, err := host.Info(); err == nil {
+		details.OSVersion = h.OS + " " + h.Platform + " " + h.PlatformVersion
+		details.KernelVer = h.KernelVersion
+		details.Uptime = h.Uptime
+		details.BootTime = h.BootTime
+		
+		arch := h.KernelArch
+		if arch == "x86_64" || arch == "amd64" {
+			arch = "64-bit"
+		} else if arch == "i386" || arch == "x86" || arch == "i686" {
+			arch = "32-bit"
+		}
+		details.SystemArch = arch
+	}
+
+	if users, err := host.Users(); err == nil && len(users) > 0 {
+		var usrList []string
+		for _, u := range users {
+			usrList = append(usrList, u.User)
+		}
+		details.LoggedUsers = strings.Join(usrList, ", ")
+	} else {
+		if u, err := user.Current(); err == nil {
+			details.LoggedUsers = u.Username
+		}
+	}
+
+	if ifaces, err := net.Interfaces(); err == nil {
+		var ips []string
+		for _, i := range ifaces {
+			if addrs, err := i.Addrs(); err == nil && len(addrs) > 0 {
+				var ipAddrs []string
+				for _, a := range addrs {
+					ipAddrs = append(ipAddrs, a.String())
+				}
+				ips = append(ips, fmt.Sprintf("%s [%s] (%s)", i.Name, i.HardwareAddr, strings.Join(ipAddrs, ",")))
+			}
+		}
+		details.Interfaces = strings.Join(ips, " | ")
+	}
+
+	return details
+}

@@ -16,7 +16,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "DSC User Certificate",
-   "link_count": 3,
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -24,9 +24,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "DSC User Certificate",
+   "label": "DSC Certificate",
    "link_count": 0,
-   "link_to": "DSC User Certificate",
+   "link_to": "DSC Certificate",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -50,9 +50,19 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HNS Device Map",
+   "link_count": 0,
+   "link_to": "HNS Device Map",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-22 10:31:36.758836",
+ "modified": "2026-09-22 13:58:39.752005",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "Digital Signature Certificate",

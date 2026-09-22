@@ -8,7 +8,6 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "user",
   "holder_name",
   "certificate_serial",
   "certificate_fingerprint",
@@ -16,19 +15,12 @@
   "issuer",
   "valid_from",
   "valid_until",
+  "dsc_certificate_users_section",
+  "dsc_certificate_users",
   "section_break_qdtb",
   "certificate_details"
  ],
  "fields": [
-  {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "User",
-   "options": "User",
-   "read_only": 1,
-   "reqd": 1
-  },
   {
    "fieldname": "holder_name",
    "fieldtype": "Data",
@@ -91,15 +83,25 @@
   {
    "fieldname": "section_break_qdtb",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "dsc_certificate_users_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "dsc_certificate_users",
+   "fieldtype": "Table",
+   "label": "DSC Certificate Users",
+   "options": "DSC Certificate Users"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-21 17:49:13.823300",
+ "modified": "2026-09-22 12:32:51.759787",
  "modified_by": "Administrator",
  "module": "DSC Integration",
- "name": "DSC User Certificate",
+ "name": "DSC Certificate",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [

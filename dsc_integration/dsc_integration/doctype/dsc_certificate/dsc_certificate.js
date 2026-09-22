@@ -1,7 +1,7 @@
 // Copyright (c) 2026, HNS and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("DSC User Certificate", {
+frappe.ui.form.on("DSC Certificate", {
 	refresh: function(frm) {
 		frm.add_custom_button(__("Register Certificate"), () => {
 			register_certificate_from_token(frm);
@@ -57,7 +57,7 @@ function is_paired(status) {
 async function auto_pair() {
 	const codeResp = await new Promise((resolve, reject) => {
 		frappe.call({
-			method: "dsc_integration.dsc_integration.doctype.dsc_user_certificate.dsc_user_certificate.generate_pairing_code",
+			method: "dsc_integration.dsc_integration.doctype.dsc_certificate.dsc_certificate.generate_pairing_code",
 			callback: (r) =>
 				r && r.message
 					? resolve(r.message)
@@ -141,7 +141,7 @@ function register_selected(frm, cert) {
 	}
 	
 	frappe.call({
-		method: "dsc_integration.dsc_integration.doctype.dsc_user_certificate.dsc_user_certificate.extract_certificate_from_der",
+		method: "dsc_integration.dsc_integration.doctype.dsc_certificate.dsc_certificate.extract_certificate_from_der",
 		args: {
 			cert_der_b64: cert.cert_der_b64
 		},
@@ -150,7 +150,12 @@ function register_selected(frm, cert) {
 		callback: (r) => {
 			if (r.message && !r.exc) {
 				let data = r.message;
-				frm.set_value("user", frappe.session.user);
+				let user_exists = (frm.doc.dsc_certificate_users || []).find(d => d.user === frappe.session.user);
+				if (!user_exists) {
+					let child = frm.add_child("dsc_certificate_users");
+					child.user = frappe.session.user;
+					frm.refresh_field("dsc_certificate_users");
+				}
 				frm.set_value("holder_name", data.holder_name);
 				frm.set_value("certificate_serial", data.certificate_serial);
 				frm.set_value("issuer", data.issuer);

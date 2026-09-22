@@ -1,0 +1,139 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-09-22 12:29:20.008763",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "mac_address",
+  "device_name",
+  "os",
+  "device_type",
+  "dsc_required",
+  "column_break_ghhu",
+  "allowed_user",
+  "dsc_allowed_role",
+  "dsc_allowed",
+  "section_break_uygh",
+  "device_description",
+  "column_break_kdlf",
+  "device_tech_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "mac_address",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MAC Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "device_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Device Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "device_description",
+   "fieldtype": "Long Text",
+   "label": "Device Description"
+  },
+  {
+   "fieldname": "column_break_ghhu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allowed_user",
+   "fieldtype": "Table MultiSelect",
+   "label": "Allowed User",
+   "options": "DSC Allowed User"
+  },
+  {
+   "fieldname": "dsc_allowed_role",
+   "fieldtype": "Table MultiSelect",
+   "label": " DSC Allowed Role",
+   "options": "DSC Allowed Role"
+  },
+  {
+   "default": "0",
+   "fieldname": "dsc_required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "DSC Required"
+  },
+  {
+   "fieldname": "device_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Device Type",
+   "options": "PC\nLaptop\nMobile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "device_tech_details",
+   "fieldtype": "Code",
+   "label": "Device Tech Details",
+   "read_only": 1
+  },
+  {
+   "fieldname": "os",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "OS",
+   "options": "Window\nIOS\nAndroid\nLinux\nMac OS",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dsc_allowed",
+   "fieldtype": "Table MultiSelect",
+   "label": "DSC Allowed",
+   "options": "DSC Allowed"
+  },
+  {
+   "default": "DEV-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "DEV-.YYYY.-"
+  },
+  {
+   "fieldname": "section_break_uygh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_kdlf",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-22 14:46:41.115915",
+ "modified_by": "Administrator",
+ "module": "DSC Integration",
+ "name": "HNS Device Map",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

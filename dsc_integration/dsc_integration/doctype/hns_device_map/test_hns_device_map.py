@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestDSCUserCertificate(FrappeTestCase):
+class TestHNSDeviceMap(FrappeTestCase):
 	pass

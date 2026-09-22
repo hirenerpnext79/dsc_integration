@@ -15,7 +15,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 
 
-class DSCUserCertificate(Document):
+class DSCCertificate(Document):
 	pass
 
 
