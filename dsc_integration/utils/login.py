@@ -59,8 +59,29 @@ def check_mac_before_login():
         frappe.log_error(title="DSC Device Check Error", message=frappe.get_traceback())
         raise e
 
+def _check_user_allowed(device_map, user_email):
+    for row in device_map.allowed_user:
+        if row.user == user_email:
+            return True
+    return False
+
+def _check_role_allowed(device_map, user_email):
+    user_roles = frappe.get_roles(user_email)
+    for row in device_map.dsc_allowed_role:
+        if row.role in user_roles:
+            return True
+    return False
+
+def _check_cert_allowed(device_map, fingerprint):
+    for row in device_map.dsc_allowed:
+        assigned_fingerprint = frappe.db.get_value("DSC Certificate", row.dsc_allowed, "certificate_fingerprint")
+        if assigned_fingerprint == fingerprint:
+            return True
+    return False
+
 @frappe.whitelist(allow_guest=True)
 def verify_certificate_mapping(usr, fingerprint):
+    fingerprint = fingerprint.upper()
     if not usr or not fingerprint:
         return False
         
@@ -74,40 +95,21 @@ def verify_certificate_mapping(usr, fingerprint):
             device_map = frappe.get_doc("HNS Device Map", device_maps[0].name)
             
             if device_map.dsc_required:
-                # If there are no rows in any of the restriction tables, ANY valid token is allowed.
                 has_restrictions = (bool(device_map.allowed_user) or bool(device_map.dsc_allowed_role)) and bool(device_map.dsc_allowed)
                 
                 if has_restrictions:
                     user_role_match = False
                     
-                    # 1. Check if user explicitly allowed (if table is populated)
                     if device_map.allowed_user:
-                        for row in device_map.allowed_user:
-                            user_val = row.user if hasattr(row, "user") else getattr(row, "dsc_allowed_user", None)
-                            if user_val == user_email:
-                                user_role_match = True
-                                break
+                        user_role_match = _check_user_allowed(device_map, user_email)
                                 
-                    # 2. Check if role allowed (if table is populated)
                     if not user_role_match and device_map.dsc_allowed_role:
-                        user_roles = frappe.get_roles(user_email)
-                        for row in device_map.dsc_allowed_role:
-                            role_val = row.role if hasattr(row, "role") else getattr(row, "dsc_allowed_role", None)
-                            if role_val in user_roles:
-                                user_role_match = True
-                                break
+                        user_role_match = _check_role_allowed(device_map, user_email)
                                 
                     is_allowed = user_role_match
-                                
-                    # 3. Check if certificate is allowed (if table is populated)
+
                     if device_map.dsc_allowed:
-                        cert_match = False
-                        for row in device_map.dsc_allowed:
-                            # Fetch the fingerprint of the assigned certificate directly
-                            assigned_fingerprint = frappe.db.get_value("DSC Certificate", row.dsc_allowed, "certificate_fingerprint")
-                            if assigned_fingerprint == fingerprint:
-                                cert_match = True
-                                break
+                        cert_match = _check_cert_allowed(device_map, fingerprint)
                         is_allowed = is_allowed and cert_match
                                 
                     if not is_allowed:
