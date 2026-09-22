@@ -8,20 +8,10 @@ frappe.ui.form.on("DSC User Certificate", {
 		});
 
 		const base = "/assets/dsc_integration/downloads/";
-		const installers = [
-			{ label: __("Windows (64-bit)"), file: "dsc-bridge-1.0.0-windows.zip" },
-			{ label: __("Windows (32-bit - Hypersecu/HYP2003)"), file: "dsc-bridge-1.0.0-windows-x86.zip" },
-			{ label: __("Linux (Ubuntu/Debian .deb)"), file: "dsc-bridge_1.0.0_amd64.deb" },
-			{ label: __("Linux (other, .tar.gz)"), file: "dsc-bridge-1.0.0-linux-amd64.tar.gz" },
-		];
-
-		installers.forEach((it) => {
-			frm.add_custom_button(
-				it.label,
-				() => window.open(base + it.file, "_blank"),
-				__("Download DSC Bridge")
-			);
-		});
+		frm.add_custom_button(
+			__("Download DSC Bridge"),
+			() => window.open(base + "dsc-bridge-1.0.0-windows.zip", "_blank"),
+		);
 	},
 });
 
