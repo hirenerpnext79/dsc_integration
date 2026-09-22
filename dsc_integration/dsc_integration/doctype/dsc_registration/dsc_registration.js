@@ -111,7 +111,7 @@ async function pingAgent(port) {
 
 async function getAgentPort() {
 	try {
-		const v = await frappe.db.get_single_value("DSC Settings", "agent_listen_port");
+		const v = await frappe.db.get_single_value("DSC Agent Settings", "agent_listen_port");
 		return parseInt(v, 10) || DEFAULT_AGENT_PORT;
 	} catch (e) {
 		return DEFAULT_AGENT_PORT;
