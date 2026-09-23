@@ -44,14 +44,16 @@ frappe.ready(function() {
                 let certResponse;
                 try {
                     certResponse = await fetch(`${BRIDGE_BASE}/v1/certs`);
-                } catch(e) {
-                    // Bridge is not running, just proceed normally (backend will throw error if DSC is required)
-                    return originalFrappeCall.apply(this, arguments);
+                                } catch(e) {
+                    frappe.msgprint(__("DSC Bridge is not running. Please start the DSC Bridge to login with DSC."));
+                    if (frappe.request) frappe.request.cleanup();
+                    return; // Abort login
                 }
                 
                 const certData = await certResponse.json();
                 if (!certData || !certData.certs || certData.certs.length === 0) {
                     frappe.msgprint("No DSC token detected. Please insert your token.");
+                    if (frappe.request) frappe.request.cleanup();
                     return; // Abort login
                 }
                 
@@ -83,6 +85,7 @@ frappe.ready(function() {
                 if (!validCert) {
                     console.error("No mapped DSC certificates found:", certData.certs);
                     frappe.msgprint("This DSC Certificate is not registered to your account.");
+                    if (frappe.request) frappe.request.cleanup();
                     return; // Abort login
                 }
                 

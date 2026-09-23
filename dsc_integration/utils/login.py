@@ -13,14 +13,37 @@ def _resolve_user(usr):
 
 @frappe.whitelist(allow_guest=True)
 def is_dsc_required(usr, mac_address=None):
+    user_email = _resolve_user(usr)
+    
     if not mac_address and frappe.request:
         mac_address = frappe.request.headers.get("X-MAC-Address")
         
-    if not mac_address:
+    # Check if the specific device requires it
+    if mac_address:
+        dsc_req = frappe.db.get_value("HNS Device Map", {"mac_address": mac_address}, "dsc_required")
+        if dsc_req:
+            return True
+
+    # If the user hasn't provided a valid ID yet, we can't check
+    if not user_email:
+        return False
+
+    # Check if the user or their role is restricted by ANY HNS Device Map with DSC Required
+    user_roles = frappe.get_roles(user_email)
+    
+    device_maps = frappe.get_all("HNS Device Map", filters={"dsc_required": 1}, pluck="name")
+    if not device_maps:
         return False
         
-    dsc_req = frappe.db.get_value("HNS Device Map", {"mac_address": mac_address}, "dsc_required")
-    return bool(dsc_req)
+    # Check if user is directly allowed in any of the required device maps
+    if frappe.db.exists("DSC Allowed User", {"parent": ("in", device_maps), "parenttype": "HNS Device Map", "user": user_email}):
+        return True
+        
+    # Check if user has a role allowed in any of the required device maps
+    if user_roles and frappe.db.exists("DSC Allowed Role", {"parent": ("in", device_maps), "parenttype": "HNS Device Map", "role": ("in", user_roles)}):
+        return True
+                
+    return False
 
 def check_mac_before_login():
     try:

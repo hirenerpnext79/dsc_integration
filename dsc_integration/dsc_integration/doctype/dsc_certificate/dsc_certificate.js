@@ -130,10 +130,9 @@ async function fetch_token_certs() {
 
 function register_selected(frm, cert) {
 	if (!cert || !cert.cert_der_b64) {
-		frappe.msgprint({
+		frappe.throw({
 			title: __("Cannot register"),
-			message: __("The selected certificate did not include its DER data. Update the dsc-bridge agent."),
-			indicator: "red",
+			message: __("The selected certificate did not include its DER data. Update the dsc-bridge agent.")
 		});
 		return;
 	}
@@ -180,7 +179,7 @@ async function register_certificate_from_token(frm) {
 		await ensure_paired();
 		certs = await fetch_token_certs();
 	} catch (e) {
-		frappe.msgprint({ title: __("Register Certificate"), message: e.message, indicator: "red" });
+		frappe.throw({ title: __("Register Certificate"), message: e.message });
 		return;
 	} finally {
 		frappe.dom.unfreeze();
