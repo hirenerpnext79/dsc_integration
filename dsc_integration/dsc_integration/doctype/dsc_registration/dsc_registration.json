@@ -58,7 +58,8 @@
    "description": "SHA-256 fingerprint of the agent's self-signed TLS certificate",
    "fieldname": "agent_fingerprint",
    "fieldtype": "Data",
-   "label": "Agent TLS Fingerprint"
+   "label": "Agent TLS Fingerprint",
+   "read_only": 1
   },
   {
    "default": "1",
@@ -117,7 +118,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-21 14:59:52.757689",
+ "modified": "2026-09-23 11:08:53.012773",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Registration",

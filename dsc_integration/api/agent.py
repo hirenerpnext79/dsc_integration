@@ -5,18 +5,14 @@ import json
 import frappe
 from frappe.utils import now_datetime
 
-
 _PAIRING_KEY_PREFIX = "e_sign:pairing:"
 _PAIRING_TTL_SECONDS = 600  # 10 minutes
-
 
 def _pairing_key(code):
 	return _PAIRING_KEY_PREFIX + code
 
-
 def _hash_token(token):
 	return hashlib.sha256(token.encode("utf-8")).hexdigest()
-
 
 @frappe.whitelist()
 def generate_pairing_code():
@@ -50,7 +46,6 @@ def generate_pairing_code():
 		"site_url": site_url,
 	}
 
-
 @frappe.whitelist(allow_guest=True)
 def validate_pairing_code(pairing_code, agent_fingerprint, os_platform=None, agent_version=None):
 	key = _pairing_key(pairing_code)
@@ -79,8 +74,8 @@ def validate_pairing_code(pairing_code, agent_fingerprint, os_platform=None, age
 		"agent_version": agent_version,
 		"site_token_hash": site_token_hash,
 	})
-	agent_reg.insert(ignore_permissions=True)
 
+	agent_reg.insert(ignore_permissions=True)
 	frappe.db.commit()
 
 	return {

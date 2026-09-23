@@ -47,17 +47,13 @@ function normalise_site_url(u) {
 function is_paired(status) {
 	const here = normalise_site_url(window.location.origin);
 	const paired = (status && status.paired_sites) || [];
-	console.log(status);
-	console.log(paired);
-	console.log(here);
-	console.log(paired.some((s) => normalise_site_url(s) === here))
 	return paired.some((s) => normalise_site_url(s) === here);
 }
 
 async function auto_pair() {
 	const codeResp = await new Promise((resolve, reject) => {
 		frappe.call({
-			method: "dsc_integration.dsc_integration.doctype.dsc_certificate.dsc_certificate.generate_pairing_code",
+			method: "dsc_integration.api.agent.generate_pairing_code",
 			callback: (r) =>
 				r && r.message
 					? resolve(r.message)
@@ -75,11 +71,12 @@ async function auto_pair() {
 			site_url: window.location.origin,
 		}),
 	});
-	console.log(resp);
+
 	const body = await resp.json().catch(() => ({}));
 	if (resp.ok && body && body.site_token) {
 		window.localStorage.setItem("dsc_site_token", body.site_token);
 	}
+
 	if (!resp.ok) {
 		let detail = body.message || body.error || "";
 		throw new Error(
@@ -97,9 +94,10 @@ async function ensure_paired() {
 			)
 		);
 	}
-	// if (!is_paired(status)) {
-	// 	await auto_pair();
-	// }
+
+	if (!is_paired(status)) {
+		await auto_pair();
+	}
 }
 
 async function fetch_token_certs() {
