@@ -11,6 +11,39 @@ def _resolve_user(usr):
         user = frappe.db.get_value("User", {"mobile_no": usr}, "name")
     return user or usr
 
+def check_device_access(user, mac_address=None):
+    if not mac_address and frappe.request:
+        mac_address = frappe.request.headers.get("X-MAC-Address")
+        
+    if not mac_address:
+        return True
+        
+    device_maps = frappe.get_all("HNS Device Map", filters={"mac_address": mac_address})
+    if not device_maps:
+        return True
+        
+    device_map = frappe.get_doc("HNS Device Map", device_maps[0].name)
+    
+    # Check if there are any restrictions configured
+    has_restrictions = bool(device_map.allowed_user) or bool(device_map.dsc_allowed_role)
+    if not has_restrictions:
+        return True
+        
+    if device_map.allowed_user and _check_user_allowed(device_map, user):
+        return True
+        
+    if device_map.dsc_allowed_role and _check_role_allowed(device_map, user):
+        return True
+        
+    return False
+
+@frappe.whitelist(allow_guest=True)
+def check_device_access_api(usr):
+    user = _resolve_user(usr)
+    if not check_device_access(user):
+        frappe.throw(_("You are not authorized to use this device."))
+    return True
+
 @frappe.whitelist(allow_guest=True)
 def is_dsc_required(usr, mac_address=None):
     user = _resolve_user(usr)
@@ -62,6 +95,13 @@ def check_mac_before_login():
         user_login_id = frappe.form_dict.get("usr")
         mac_address = frappe.form_dict.get("mac_address") or frappe.request.headers.get("X-MAC-Address")
         
+        user = _resolve_user(user_login_id)
+        
+        # 1. First verify if the user is even allowed on this device
+        if not check_device_access(user, mac_address):
+            frappe.throw(_("You are not authorized to log in from this device."))
+        
+        # 2. Then check if DSC is required for this login
         if is_dsc_required(user_login_id, mac_address):
             is_dsc_login = frappe.form_dict.get("is_dsc_login") or frappe.flags.get("is_dsc_login")
             
@@ -72,7 +112,6 @@ def check_mac_before_login():
             if not dsc_fingerprint:
                 frappe.throw(_("Missing DSC Certificate fingerprint."))
                 
-            user = _resolve_user(user_login_id)
             verify_result = verify_certificate_mapping(user, dsc_fingerprint)
             if not verify_result or not verify_result.get("status"):
                 error_msg = verify_result.get("msg") if verify_result else "Invalid DSC Certificate."

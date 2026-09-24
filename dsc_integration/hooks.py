@@ -30,7 +30,8 @@ app_license = "mit"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/dsc_integration/css/dsc_integration.css"
-web_include_js = "/assets/dsc_integration/js/dsc_login.js"
+web_include_js = "/assets/dsc_integration/js/dsc_core.js"
+app_include_js = "/assets/dsc_integration/js/dsc_core.js"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "dsc_integration/public/scss/website"
