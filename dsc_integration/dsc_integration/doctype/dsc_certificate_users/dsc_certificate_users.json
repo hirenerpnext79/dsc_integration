@@ -14,14 +14,15 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "User",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-22 12:32:09.310355",
+ "modified": "2026-09-24 10:42:20.975588",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Certificate Users",

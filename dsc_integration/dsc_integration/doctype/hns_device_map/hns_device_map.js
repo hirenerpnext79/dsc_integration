@@ -25,6 +25,7 @@ frappe.ui.form.on("HNS Device Map", {
 						else if (data.platform === "linux") os_mapped = "Linux";
 						
 						frm.set_value("mac_address", data.mac_address || "");
+						frm.set_value("person_name", data.hostname || "");
 						frm.set_value("device_name", data.hostname || "");
 						frm.set_value("os", os_mapped);
 						let tech = ``;

@@ -153,6 +153,7 @@ function register_selected(frm, cert) {
 					child.user = frappe.session.user;
 					frm.refresh_field("dsc_certificate_users");
 				}
+				frm.set_value("short_holder_name", data.holder_name);
 				frm.set_value("holder_name", data.holder_name);
 				frm.set_value("certificate_serial", data.certificate_serial);
 				frm.set_value("issuer", data.issuer);

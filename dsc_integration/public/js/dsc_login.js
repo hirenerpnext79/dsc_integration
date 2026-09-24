@@ -44,7 +44,7 @@ frappe.ready(function() {
                 let certResponse;
                 try {
                     certResponse = await fetch(`${BRIDGE_BASE}/v1/certs`);
-                                } catch(e) {
+                } catch(e) {
                     frappe.msgprint(__("DSC Bridge is not running. Please start the DSC Bridge to login with DSC."));
                     if (frappe.request) frappe.request.cleanup();
                     return; // Abort login

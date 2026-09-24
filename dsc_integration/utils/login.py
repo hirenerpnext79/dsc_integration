@@ -4,16 +4,16 @@ from frappe import _
 def _resolve_user(usr):
     if not usr:
         return None
-    user_email = frappe.db.get_value("User", {"email": usr}, "name")
-    if not user_email:
-        user_email = frappe.db.get_value("User", {"username": usr}, "name")
-    if not user_email:
-        user_email = frappe.db.get_value("User", {"mobile_no": usr}, "name")
-    return user_email or usr
+    user = frappe.db.get_value("User", {"email": usr}, "name")
+    if not user:
+        user = frappe.db.get_value("User", {"username": usr}, "name")
+    if not user:
+        user = frappe.db.get_value("User", {"mobile_no": usr}, "name")
+    return user or usr
 
 @frappe.whitelist(allow_guest=True)
 def is_dsc_required(usr, mac_address=None):
-    user_email = _resolve_user(usr)
+    user = _resolve_user(usr)
     
     if not mac_address and frappe.request:
         mac_address = frappe.request.headers.get("X-MAC-Address")
@@ -25,18 +25,18 @@ def is_dsc_required(usr, mac_address=None):
             return True
 
     # If the user hasn't provided a valid ID yet, we can't check
-    if not user_email:
+    if not user:
         return False
 
     # Check if the user or their role is restricted by ANY HNS Device Map with DSC Required
-    user_roles = frappe.get_roles(user_email)
+    user_roles = frappe.get_roles(user)
     
     device_maps = frappe.get_all("HNS Device Map", filters={"dsc_required": 1}, pluck="name")
     if not device_maps:
         return False
         
     # Check if user is directly allowed in any of the required device maps
-    if frappe.db.exists("DSC Allowed User", {"parent": ("in", device_maps), "parenttype": "HNS Device Map", "user": user_email}):
+    if frappe.db.exists("DSC Allowed User", {"parent": ("in", device_maps), "parenttype": "HNS Device Map", "user": user}):
         return True
         
     # Check if user has a role allowed in any of the required device maps
@@ -72,8 +72,8 @@ def check_mac_before_login():
             if not dsc_fingerprint:
                 frappe.throw(_("Missing DSC Certificate fingerprint."))
                 
-            user_email = _resolve_user(user_login_id)
-            verify_result = verify_certificate_mapping(user_email, dsc_fingerprint)
+            user = _resolve_user(user_login_id)
+            verify_result = verify_certificate_mapping(user, dsc_fingerprint)
             if not verify_result or not verify_result.get("status"):
                 error_msg = verify_result.get("msg") if verify_result else "Invalid DSC Certificate."
                 frappe.throw(_(error_msg))
@@ -82,25 +82,28 @@ def check_mac_before_login():
         frappe.log_error(title="DSC Device Check Error", message=frappe.get_traceback())
         raise e
 
-def _check_user_allowed(device_map, user_email):
+def _check_user_allowed(device_map, user):
     for row in device_map.allowed_user:
-        if row.user == user_email:
+        if row.user == user:
             return True
     return False
 
-def _check_role_allowed(device_map, user_email):
-    user_roles = frappe.get_roles(user_email)
+def _check_role_allowed(device_map, user):
+    user_roles = frappe.get_roles(user)
     for row in device_map.dsc_allowed_role:
         if row.role in user_roles:
             return True
     return False
 
-def _check_cert_allowed(device_map, fingerprint):
+def _check_cert_allowed(device_map, fingerprint, user):
     for row in device_map.dsc_allowed:
         assigned_fingerprint = frappe.db.get_value("DSC Certificate", row.dsc_allowed, "certificate_fingerprint")
         if assigned_fingerprint == fingerprint:
-            return True
-    return False
+            allowed_users = frappe.get_all("DSC Certificate Users", filters={"parent": row.dsc_allowed, "parenttype": "DSC Certificate"}, pluck="user")
+            if user not in allowed_users:
+                return False, "You are not authorized to use this specific DSC Certificate."
+            return True, ""
+    return False, "You do not have permission to use DSC on this device."
 
 @frappe.whitelist(allow_guest=True)
 def verify_certificate_mapping(usr, fingerprint):
@@ -108,7 +111,7 @@ def verify_certificate_mapping(usr, fingerprint):
     if not usr or not fingerprint:
         return False
         
-    user_email = _resolve_user(usr)
+    user = _resolve_user(usr)
         
     # Check device restrictions if applicable
     mac_address = frappe.request.headers.get("X-MAC-Address") if frappe.request else None
@@ -124,16 +127,26 @@ def verify_certificate_mapping(usr, fingerprint):
                     user_role_match = False
                     
                     if device_map.allowed_user:
-                        user_role_match = _check_user_allowed(device_map, user_email)
+                        user_role_match = _check_user_allowed(device_map, user)
                                 
                     if not user_role_match and device_map.dsc_allowed_role:
-                        user_role_match = _check_role_allowed(device_map, user_email)
+                        user_role_match = _check_role_allowed(device_map, user)
+
+                    if not user_role_match:
+                        if device_map.allowed_user and not device_map.dsc_allowed_role:
+                            frappe.throw(_("You are not authorized to use DSC on this device (User not in allowed list)."))
+                        elif device_map.dsc_allowed_role and not device_map.allowed_user:
+                            frappe.throw(_("You are not authorized to use DSC on this device (Role not in allowed list)."))
+                        else:
+                            frappe.throw(_("You are not authorized to use DSC on this device (User and Role not in allowed list)."))
                                 
                     is_allowed = user_role_match
 
                     if device_map.dsc_allowed:
-                        cert_match = _check_cert_allowed(device_map, fingerprint)
+                        cert_match, cert_msg = _check_cert_allowed(device_map, fingerprint, user)
                         is_allowed = is_allowed and cert_match
+                        if not cert_match:
+                            frappe.throw(_(cert_msg))
                                 
                     if not is_allowed:
                         return {"status": False, "msg": "You do not have permission to use DSC on this device."}
