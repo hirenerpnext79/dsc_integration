@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "person_name",
   "mac_address",
   "device_name",
   "os",
@@ -40,19 +41,22 @@
   {
    "fieldname": "device_description",
    "fieldtype": "Long Text",
-   "label": "Device Description"
+   "label": "Device Description",
+   "max_height": "243px"
   },
   {
    "fieldname": "column_break_ghhu",
    "fieldtype": "Column Break"
   },
   {
+   "description": "Select specific ERP users who are allowed to access this PC through their login. Leave blank to allow all logged-in users.",
    "fieldname": "allowed_user",
    "fieldtype": "Table MultiSelect",
    "label": "Allowed User",
    "options": "DSC Allowed User"
   },
   {
+   "description": "Select specific ERP role who are allowed to access this PC through their login. Leave blank to allow all logged-in users.",
    "fieldname": "dsc_allowed_role",
    "fieldtype": "Table MultiSelect",
    "label": " DSC Allowed Role",
@@ -77,6 +81,7 @@
    "fieldname": "device_tech_details",
    "fieldtype": "Code",
    "label": "Device Tech Details",
+   "max_height": "243px",
    "read_only": 1
   },
   {
@@ -107,12 +112,20 @@
   {
    "fieldname": "column_break_kdlf",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "person_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Person Name",
+   "reqd": 1,
+   "unique": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-22 15:09:21.132701",
+ "modified": "2026-09-24 11:34:49.514952",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "HNS Device Map",

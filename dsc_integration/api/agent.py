@@ -78,11 +78,17 @@ def validate_pairing_code(pairing_code, agent_fingerprint, os_platform=None, age
 	agent_reg.insert(ignore_permissions=True)
 	frappe.db.commit()
 
+	from dsc_integration.dsc_integration.doctype.dsc_agent_settings.dsc_agent_settings import (
+		get_or_create_hmac_secret,
+	)
+	hmac_secret = get_or_create_hmac_secret()
+
 	return {
 		"status": "paired",
 		"site_token": site_token,
 		"site_url": code_data["site_url"],
-		"agent_registration": agent_reg.name
+		"agent_registration": agent_reg.name,
+		"hmac_secret": hmac_secret,
 	}
 
 @frappe.whitelist(allow_guest=True)

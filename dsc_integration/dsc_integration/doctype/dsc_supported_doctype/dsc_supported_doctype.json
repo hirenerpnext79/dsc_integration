@@ -1,20 +1,20 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-09-22 12:30:24.619398",
+ "creation": "2026-09-26 10:46:41.288499",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "user"
+  "document_type"
  ],
  "fields": [
   {
-   "fieldname": "user",
+   "fieldname": "document_type",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "User",
-   "options": "User",
+   "label": "Document Type",
+   "options": "DocType",
    "reqd": 1
   }
  ],
@@ -22,10 +22,10 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-24 10:42:20.975588",
+ "modified": "2026-09-26 10:46:41.288499",
  "modified_by": "Administrator",
  "module": "DSC Integration",
- "name": "DSC Certificate Users",
+ "name": "DSC Supported Doctype",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",

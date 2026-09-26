@@ -5,7 +5,20 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "agent_listen_port"
+  "agent_listen_port",
+  "column_break_hmui",
+  "hmac_secret",
+  "section_break_wmkg",
+  "supported_doctypes",
+  "signature_stamp_settings_tab",
+  "stamp_x",
+  "stamp_y",
+  "stamp_page",
+  "column_break_bczl",
+  "stamp_width",
+  "stamp_height",
+  "section_break_kcig",
+  "stamp_text"
  ],
  "fields": [
   {
@@ -14,13 +27,89 @@
    "fieldname": "agent_listen_port",
    "fieldtype": "Int",
    "label": "Agent Listen Port"
+  },
+  {
+   "description": "Server-issued HMAC key delivered to paired agents for tamper-evident /v1/sign requests. Auto-generated on first read; rotate by clearing this field.",
+   "fieldname": "hmac_secret",
+   "fieldtype": "Password",
+   "label": "HMAC Secret"
+  },
+  {
+   "fieldname": "column_break_hmui",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_wmkg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Selected Doctype given option to the pdf sign with dsc",
+   "fieldname": "supported_doctypes",
+   "fieldtype": "Table",
+   "label": "Supported DocTypes",
+   "options": "DSC Supported Doctype"
+  },
+  {
+   "default": "Digitally signed by %(signer)s\nTimestamp: %(ts)s",
+   "description": "Use %(signer)s and %(ts)s as placeholders",
+   "fieldname": "stamp_text",
+   "fieldtype": "Small Text",
+   "label": "Stamp Text"
+  },
+  {
+   "default": "Last Page",
+   "fieldname": "stamp_page",
+   "fieldtype": "Select",
+   "label": "Stamp Page",
+   "options": "Last Page\nFirst Page"
+  },
+  {
+   "default": "60",
+   "description": "Height of the signature box",
+   "fieldname": "stamp_height",
+   "fieldtype": "Float",
+   "label": "Height"
+  },
+  {
+   "default": "200",
+   "description": "Width of the signature box",
+   "fieldname": "stamp_width",
+   "fieldtype": "Float",
+   "label": "Width"
+  },
+  {
+   "default": "10",
+   "description": "Distance from bottom edge (points)",
+   "fieldname": "stamp_y",
+   "fieldtype": "Float",
+   "label": "Y Position"
+  },
+  {
+   "default": "390",
+   "description": "Distance from left edge (points)",
+   "fieldname": "stamp_x",
+   "fieldtype": "Float",
+   "label": "X Position"
+  },
+  {
+   "fieldname": "signature_stamp_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Signature Stamp Settings"
+  },
+  {
+   "fieldname": "column_break_bczl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_kcig",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-22 10:28:54.473993",
+ "modified": "2026-09-26 11:40:47.341118",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Agent Settings",

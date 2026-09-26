@@ -30,7 +30,8 @@ app_license = "mit"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/dsc_integration/css/dsc_integration.css"
-web_include_js = "/assets/dsc_integration/js/dsc_login.js"
+web_include_js = "/assets/dsc_integration/js/dsc_core.js"
+app_include_js = "/assets/dsc_integration/js/dsc_core.js"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "dsc_integration/public/scss/website"
@@ -43,7 +44,7 @@ web_include_js = "/assets/dsc_integration/js/dsc_login.js"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# 	"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -249,3 +250,8 @@ web_include_js = "/assets/dsc_integration/js/dsc_login.js"
 
 # DSC Login Validation
 before_request = ["dsc_integration.utils.login.check_mac_before_login"]
+
+
+
+# Bootinfo hook
+extend_bootinfo = "dsc_integration.utils.boot.extend_bootinfo"
