@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"log"
 	"os"
@@ -10,6 +11,9 @@ import (
 
 	"fyne.io/systray"
 )
+
+//go:embed winres/hns.ico
+var iconBytes []byte
 
 func main() {
 	// Hooks called by the MSI installer at install / uninstall time. Both
@@ -93,6 +97,7 @@ func main() {
 
 func onTrayReady(agentFP string) func() {
 	return func() {
+		systray.SetIcon(iconBytes)
 		systray.SetTitle("DSC Bridge")
 		systray.SetTooltip("DSC Bridge Agent — Digital Signature Service")
 
