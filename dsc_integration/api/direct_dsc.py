@@ -1,23 +1,43 @@
 import frappe
 import asyncio
+import io
+import base64
+import hashlib
+import hmac
+import secrets
+import time
+
+try:
+    from asn1crypto import x509, algos, cms, core
+    from pyhanko.sign import signers, fields
+    from pyhanko_certvalidator.registry import SimpleCertificateStore
+    from pyhanko.pdf_utils.writer import copy_into_new_writer
+    from pyhanko.pdf_utils.reader import PdfFileReader
+    from pyhanko.stamp import TextStampStyle
+    from pyhanko.sign.signers.pdf_byterange import PreparedByteRangeDigest
+    PYHANKO_AVAILABLE = True
+except ImportError:
+    PYHANKO_AVAILABLE = False
+
 
 @frappe.whitelist()
 def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
-    from frappe.utils.pdf import get_pdf
-    import io, base64
-    from asn1crypto import x509, algos, cms, core
-    import hashlib
-    import hmac
-    import secrets
-    import time
-    
-    try:
-        from pyhanko.sign import signers, fields
-        from pyhanko_certvalidator.registry import SimpleCertificateStore
-        from pyhanko.pdf_utils.writer import copy_into_new_writer
-        from pyhanko.pdf_utils.reader import PdfFileReader
-    except ImportError:
+    if not PYHANKO_AVAILABLE:
         frappe.throw("pyHanko is not installed")
+        
+    from frappe.utils.pdf import get_pdf
+    
+    # Fetch Settings once
+    settings = frappe.get_single("DSC Agent Settings")
+    
+    # HMAC Generation early check
+    try:
+        hmac_secret = settings.get_password("hmac_secret", raise_exception=False)
+    except Exception:
+        hmac_secret = None
+        
+    if not hmac_secret:
+        frappe.throw("HMAC Secret is not configured in DSC Agent Settings. Please configure it to continue signing.")
         
     cert_der = base64.b64decode(cert_der_b64)
     cert = x509.Certificate.load(cert_der)
@@ -30,7 +50,26 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     reader = PdfFileReader(pdf_stream)
     writer = copy_into_new_writer(reader)
     
-    sig_field = fields.SigFieldSpec('Signature1', box=(10, 10, 200, 60))
+    # Stamp Settings
+    stamp_x = int(settings.get("stamp_x") or 10)
+    stamp_y = int(settings.get("stamp_y") or 10)
+    stamp_width = int(settings.get("stamp_width") or 200)
+    stamp_height = int(settings.get("stamp_height") or 60)
+    stamp_page = settings.get("stamp_page")
+    stamp_text = settings.get("stamp_text") or "Digitally signed by %(signer)s\nDate: %(ts)s"
+
+    try:
+        total_pages = int(reader.root['/Pages']['/Count'])
+    except Exception:
+        total_pages = 1
+        
+    on_page = max(0, total_pages - 1) if stamp_page == "Last Page" else 0
+        
+    sig_field = fields.SigFieldSpec(
+        'Signature1', 
+        on_page=on_page, 
+        box=(stamp_x, stamp_y, stamp_x + stamp_width, stamp_y + stamp_height)
+    )
     fields.append_signature_field(writer, sig_field)
     
     signer = signers.ExternalSigner(
@@ -41,9 +80,16 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     )
     
     out_stream = io.BytesIO()
-    sig_meta = signers.PdfSignatureMetadata(field_name='Signature1')
-    pdf_signer = signers.PdfSigner(sig_meta, signer=signer)
     
+    try:
+        stamp_style = TextStampStyle(stamp_text=stamp_text, border_width=1)
+        sig_meta = signers.PdfSignatureMetadata(field_name='Signature1')
+        pdf_signer = signers.PdfSigner(sig_meta, signer=signer, stamp_style=stamp_style)
+    except Exception as e:
+        frappe.log_error('DSC Stamp Error', str(e))
+        sig_meta = signers.PdfSignatureMetadata(field_name='Signature1')
+        pdf_signer = signers.PdfSigner(sig_meta, signer=signer)
+
     async def prepare():
         return await pdf_signer.async_digest_doc_for_signing(
             pdf_out=writer,
@@ -54,39 +100,19 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     prep_digest_obj, _tbs_doc, _ = asyncio.run(prepare())
     document_digest_bytes = prep_digest_obj.document_digest
     
-    # CMS requires signing the SignedAttributes, not the document hash directly
+    # CMS requires signing the SignedAttributes
     signed_attrs = cms.CMSAttributes([
-        cms.CMSAttribute({
-            "type": "content_type",
-            "values": ["data"],
-        }),
-        cms.CMSAttribute({
-            "type": "message_digest",
-            "values": [core.OctetString(document_digest_bytes)],
-        }),
+        cms.CMSAttribute({"type": "content_type", "values": ["data"]}),
+        cms.CMSAttribute({"type": "message_digest", "values": [core.OctetString(document_digest_bytes)]}),
     ])
-    signed_attrs_der = signed_attrs.dump()
-    hash_to_sign_hex = hashlib.sha256(signed_attrs_der).hexdigest()
-    hash_algorithm = "sha256"
     
+    hash_to_sign_hex = hashlib.sha256(signed_attrs.dump()).hexdigest()
+    hash_algorithm = "sha256"
     session_id = frappe.generate_hash(length=10)
     
-    # HMAC Generation
-    try:
-        hmac_secret = frappe.get_single("DSC Agent Settings").get_password("hmac_secret", raise_exception=False)
-    except Exception:
-        hmac_secret = None
-    if not hmac_secret:
-        hmac_secret = "REi9DpASSPZJTJ8hj61RNZFIacsgz1HPKCzne0e3c20hHBj9CUC37swxsgz3gsd_"
     timestamp = int(time.time())
     nonce = secrets.token_hex(16)
-    mac_payload = "|".join([
-        session_id,
-        hash_to_sign_hex,
-        hash_algorithm,
-        str(timestamp),
-        nonce,
-    ]).encode("utf-8")
+    mac_payload = f"{session_id}|{hash_to_sign_hex}|{hash_algorithm}|{timestamp}|{nonce}".encode("utf-8")
     
     hmac_signature = hmac.new(hmac_secret.encode("utf-8"), mac_payload, hashlib.sha256).hexdigest()
     
@@ -113,16 +139,10 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
         "hmac_signature": hmac_signature
     }
 
-
 @frappe.whitelist()
 def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, **kwargs):
-    import io, base64
-    from asn1crypto import x509, cms, algos, core
-    
-    try:
-        from pyhanko.sign.signers.pdf_byterange import PreparedByteRangeDigest
-    except ImportError:
-        pass
+    if not PYHANKO_AVAILABLE:
+        frappe.throw("pyHanko is not installed")
         
     cached = frappe.cache().get_value(f"dsc_prep_{session_id}")
     if not cached:
@@ -132,15 +152,12 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
         signature_bytes = bytes.fromhex(signature_hex)
     except ValueError:
         signature_bytes = base64.b64decode(signature_hex)
+        
     cert_der = base64.b64decode(cached["cert_der_b64"])
     cert = x509.Certificate.load(cert_der)
     
-    # Build CMS manually with SignedAttributes
     signed_attrs = cms.CMSAttributes([
-        cms.CMSAttribute({
-            "type": "content_type",
-            "values": ["data"],
-        }),
+        cms.CMSAttribute({"type": "content_type", "values": ["data"]}),
         cms.CMSAttribute({
             "type": "message_digest",
             "values": [core.OctetString(bytes.fromhex(cached["document_digest_hex"]))],
@@ -161,27 +178,16 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
         "signature": signature_bytes,
     })
 
-    cert_choices = [cms.CertificateChoices({"certificate": cert})]
-
     signed_data = cms.SignedData({
         "version": "v1",
-        "digest_algorithms": cms.DigestAlgorithms([
-            algos.DigestAlgorithm({"algorithm": "sha256"})
-        ]),
-        "encap_content_info": cms.ContentInfo({
-            "content_type": "data",
-        }),
-        "certificates": cms.CertificateSet(cert_choices),
+        "digest_algorithms": cms.DigestAlgorithms([algos.DigestAlgorithm({"algorithm": "sha256"})]),
+        "encap_content_info": cms.ContentInfo({"content_type": "data"}),
+        "certificates": cms.CertificateSet([cms.CertificateChoices({"certificate": cert})]),
         "signer_infos": cms.SignerInfos([signer_info]),
     })
 
-    cms_content = cms.ContentInfo({
-        "content_type": "signed_data",
-        "content": signed_data,
-    })
-    cms_bytes = cms_content.dump()
+    cms_bytes = cms.ContentInfo({"content_type": "signed_data", "content": signed_data}).dump()
     
-    # Inject CMS
     prep_digest_obj = PreparedByteRangeDigest(
         document_digest=bytes.fromhex(cached["document_digest_hex"]),
         reserved_region_start=cached["reserved_region_start"],
@@ -190,7 +196,6 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
     
     output = io.BytesIO(cached["pdf_bytes"])
     prep_digest_obj.fill_with_cms(output, cms_bytes)
-    output.seek(0)
     
     file_doc = frappe.new_doc("File")
     file_doc.file_name = f"{cached['docname']}_DSC_Signed.pdf"
