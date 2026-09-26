@@ -5,7 +5,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "agent_listen_port"
+  "agent_listen_port",
+  "hmac_secret"
  ],
  "fields": [
   {
@@ -14,14 +15,20 @@
    "fieldname": "agent_listen_port",
    "fieldtype": "Int",
    "label": "Agent Listen Port"
+  },
+  {
+   "description": "Server-issued HMAC key delivered to paired agents for tamper-evident /v1/sign requests. Auto-generated on first read; rotate by clearing this field.",
+   "fieldname": "hmac_secret",
+   "fieldtype": "Password",
+   "label": "HMAC Secret"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-22 10:28:54.473993",
- "modified_by": "Administrator",
+ "modified": "2026-09-24 18:08:47.358876",
+ "modified_by": "hirenerpnext79@gmail.com",
  "module": "DSC Integration",
  "name": "DSC Agent Settings",
  "owner": "Administrator",

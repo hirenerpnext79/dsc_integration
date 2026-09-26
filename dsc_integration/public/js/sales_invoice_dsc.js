@@ -37,7 +37,7 @@ frappe.ui.form.on('Sales Invoice', {
                     body: JSON.stringify({
                         session_id: session.session_id, hash_to_sign: session.hash_to_sign,
                         hash_algorithm: session.hash_algorithm, expected_fingerprint: certBody.certs[0].fingerprint_sha256,
-                        pin: pin, timestamp: Math.floor(Date.now() / 1000), nonce: "1click", hmac: ""
+                        pin: pin, timestamp: session.hmac_timestamp, nonce: session.hmac_nonce, hmac: session.hmac_signature
                     })
                 });
                 if (!signResp.ok) {
@@ -49,7 +49,12 @@ frappe.ui.form.on('Sales Invoice', {
                 frappe.show_alert({message: __('Finalizing PDF...'), indicator: 'blue'});
                 const finalResp = await frappe.call({
                     method: 'dsc_integration.api.direct_dsc.finalize_direct_sign',
-                    args: { session_id: session.session_id, signature_hex: signedBody.signature_hex }
+                    args: { 
+                        doctype: frm.doctype,
+                        docname: frm.docname,
+                        session_id: session.session_id, 
+                        signature_hex: signedBody.signature_hex || signedBody.signature || signedBody.signature_bytes_b64
+                    }
                 });
                 
                 if (finalResp.message.status === 'success') {

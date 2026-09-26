@@ -11,7 +11,13 @@ def _resolve_user(usr):
         user = frappe.db.get_value("User", {"mobile_no": usr}, "name")
     return user or usr
 
+def is_admin(user):
+    return user == "Administrator"
+
 def check_device_access(user, mac_address=None):
+    if is_admin(user):
+        return True
+
     if not mac_address and frappe.request:
         mac_address = frappe.request.headers.get("X-MAC-Address")
         
@@ -24,7 +30,6 @@ def check_device_access(user, mac_address=None):
         
     device_map = frappe.get_doc("HNS Device Map", device_maps[0].name)
     
-    # Check if there are any restrictions configured
     has_restrictions = bool(device_map.allowed_user) or bool(device_map.dsc_allowed_role)
     if not has_restrictions:
         return True
@@ -40,6 +45,10 @@ def check_device_access(user, mac_address=None):
 @frappe.whitelist(allow_guest=True)
 def check_device_access_api(usr):
     user = _resolve_user(usr)
+    
+    if is_admin(user):
+        return True
+        
     if not check_device_access(user):
         frappe.throw(_("You are not authorized to use this device."))
     return True
@@ -48,31 +57,29 @@ def check_device_access_api(usr):
 def is_dsc_required(usr, mac_address=None):
     user = _resolve_user(usr)
     
+    if is_admin(user):
+        return False
+    
     if not mac_address and frappe.request:
         mac_address = frappe.request.headers.get("X-MAC-Address")
         
-    # Check if the specific device requires it
     if mac_address:
         dsc_req = frappe.db.get_value("HNS Device Map", {"mac_address": mac_address}, "dsc_required")
         if dsc_req:
             return True
 
-    # If the user hasn't provided a valid ID yet, we can't check
     if not user:
         return False
 
-    # Check if the user or their role is restricted by ANY HNS Device Map with DSC Required
     user_roles = frappe.get_roles(user)
     
     device_maps = frappe.get_all("HNS Device Map", filters={"dsc_required": 1}, pluck="name")
     if not device_maps:
         return False
         
-    # Check if user is directly allowed in any of the required device maps
     if frappe.db.exists("DSC Allowed User", {"parent": ("in", device_maps), "parenttype": "HNS Device Map", "user": user}):
         return True
         
-    # Check if user has a role allowed in any of the required device maps
     if user_roles and frappe.db.exists("DSC Allowed Role", {"parent": ("in", device_maps), "parenttype": "HNS Device Map", "role": ("in", user_roles)}):
         return True
                 
@@ -80,7 +87,6 @@ def is_dsc_required(usr, mac_address=None):
 
 def check_mac_before_login():
     try:
-        # Only run this logic if the user is trying to log in
         if not frappe.request:
             return
             
@@ -97,11 +103,9 @@ def check_mac_before_login():
         
         user = _resolve_user(user_login_id)
         
-        # 1. First verify if the user is even allowed on this device
         if not check_device_access(user, mac_address):
-            frappe.throw(_("You are not authorized to log in from this device."))
+            frappe.throw(_("You are not authorized to log in from this device. 123"))
         
-        # 2. Then check if DSC is required for this login
         if is_dsc_required(user_login_id, mac_address):
             is_dsc_login = frappe.form_dict.get("is_dsc_login") or frappe.flags.get("is_dsc_login")
             
@@ -152,7 +156,6 @@ def verify_certificate_mapping(usr, fingerprint):
         
     user = _resolve_user(usr)
         
-    # Check device restrictions if applicable
     mac_address = frappe.request.headers.get("X-MAC-Address") if frappe.request else None
     if mac_address:
         device_maps = frappe.get_all("HNS Device Map", filters={"mac_address": mac_address}, fields=["name", "dsc_required"])

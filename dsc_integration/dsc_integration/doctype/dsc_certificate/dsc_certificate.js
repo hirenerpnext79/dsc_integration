@@ -75,6 +75,7 @@ async function auto_pair() {
 	const body = await resp.json().catch(() => ({}));
 	if (resp.ok && body && body.site_token) {
 		window.localStorage.setItem("dsc_site_token", body.site_token);
+		window.localStorage.setItem("hmac_secret", body.hmac_secret);
 	}
 
 	if (!resp.ok) {
@@ -87,6 +88,7 @@ async function auto_pair() {
 
 async function ensure_paired() {
 	const status = await ping_agent();
+	console.log(status)
 	if (!status) {
 		throw new Error(
 			__(
@@ -94,7 +96,7 @@ async function ensure_paired() {
 			)
 		);
 	}
-
+	console.log(is_paired(status))
 	if (!is_paired(status)) {
 		await auto_pair();
 	}
