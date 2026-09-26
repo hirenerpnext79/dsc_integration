@@ -161,8 +161,13 @@ frappe.ui.form.on(doctype, {
                 });
                 
                 frappe.show_alert({message: __('Connecting to Local Token...'), indicator: 'blue'});
-                const certResp = await fetch(`https://${AGENT_HOST}:${PORT}/v1/certs`, {method: "GET", mode: "cors"});
-                if (!certResp.ok) throw new Error("Could not read certificate. Is DSC Bridge running?");
+                let certResp;
+                try {
+                    certResp = await fetch(`https://${AGENT_HOST}:${PORT}/v1/certs`, {method: "GET", mode: "cors"});
+                } catch(e) {
+                    throw new Error(__("DSC Bridge is not running. Please start the DSC Bridge to perform this action."));
+                }
+                if (!certResp.ok) throw new Error(__("Could not read certificate. Is DSC Bridge running?"));
                 const certBody = await certResp.json();
                 if (!certBody.certs || !certBody.certs.length) throw new Error("No certificate found on token.");
                 
@@ -181,14 +186,19 @@ frappe.ui.form.on(doctype, {
                 });
                 
                 frappe.show_alert({message: __('Signing with Token...'), indicator: 'blue'});
-                const signResp = await fetch(`https://${AGENT_HOST}:${PORT}/v1/sign`, {
-                    method: "POST", mode: "cors", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        session_id: session.session_id, hash_to_sign: session.hash_to_sign,
-                        hash_algorithm: session.hash_algorithm, expected_fingerprint: certBody.certs[0].fingerprint_sha256,
-                        pin: pin, timestamp: session.hmac_timestamp, nonce: session.hmac_nonce, hmac: session.hmac_signature
-                    })
-                });
+                let signResp;
+                try {
+                    signResp = await fetch(`https://${AGENT_HOST}:${PORT}/v1/sign`, {
+                        method: "POST", mode: "cors", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            session_id: session.session_id, hash_to_sign: session.hash_to_sign,
+                            hash_algorithm: session.hash_algorithm, expected_fingerprint: certBody.certs[0].fingerprint_sha256,
+                            pin: pin, timestamp: session.hmac_timestamp, nonce: session.hmac_nonce, hmac: session.hmac_signature
+                        })
+                    });
+                } catch(e) {
+                    throw new Error(__("DSC Bridge connection lost. Please ensure the DSC Bridge is running."));
+                }
                 if (!signResp.ok) {
                     const errorText = await signResp.text();
                     throw new Error("Bridge Error: " + errorText);
