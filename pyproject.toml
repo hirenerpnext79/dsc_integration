@@ -9,6 +9,7 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=15.0.0" # Installed and managed by bench.
+    "pyhanko",
 ]
 
 [tool.bench.frappe-dependencies]
@@ -61,3 +62,4 @@ typing-modules = ["frappe.types.DF"]
 quote-style = "double"
 indent-style = "tab"
 docstring-code-format = true
+
