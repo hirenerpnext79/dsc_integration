@@ -6,7 +6,10 @@
  "engine": "InnoDB",
  "field_order": [
   "agent_listen_port",
-  "hmac_secret"
+  "column_break_hmui",
+  "hmac_secret",
+  "section_break_wmkg",
+  "supported_doctypes"
  ],
  "fields": [
   {
@@ -21,14 +24,29 @@
    "fieldname": "hmac_secret",
    "fieldtype": "Password",
    "label": "HMAC Secret"
+  },
+  {
+   "fieldname": "column_break_hmui",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_wmkg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Selected Doctype given option to the pdf sign with dsc",
+   "fieldname": "supported_doctypes",
+   "fieldtype": "Table",
+   "label": "Supported DocTypes",
+   "options": "DSC Supported Doctype"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-24 18:08:47.358876",
- "modified_by": "hirenerpnext79@gmail.com",
+ "modified": "2026-09-26 11:00:20.586654",
+ "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Agent Settings",
  "owner": "Administrator",

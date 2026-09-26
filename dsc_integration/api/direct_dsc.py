@@ -202,17 +202,3 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
     
     frappe.cache().delete_value(f"dsc_prep_{session_id}")
     return {"status": "success"}
-
-@frappe.whitelist()
-def get_or_create_hmac_secret():
-    import secrets
-    doc = frappe.get_single("DSC Agent Settings")
-    current = doc.get_password("hmac_secret", raise_exception=False) if getattr(doc, "hmac_secret", None) else None
-    if current:
-        return current
-        
-    new_secret = secrets.token_urlsafe(48)
-    doc.hmac_secret = new_secret
-    doc.save(ignore_permissions=True)
-    frappe.db.commit()
-    return new_secret

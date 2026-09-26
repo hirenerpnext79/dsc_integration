@@ -44,7 +44,6 @@ app_include_js = "/assets/dsc_integration/js/dsc_core.js"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {
 # 	"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -252,6 +251,7 @@ app_include_js = "/assets/dsc_integration/js/dsc_core.js"
 # DSC Login Validation
 before_request = ["dsc_integration.utils.login.check_mac_before_login"]
 
-doctype_js = {
-	"Sales Invoice": "public/js/sales_invoice_dsc.js"}
 
+
+# Bootinfo hook
+extend_bootinfo = "dsc_integration.utils.boot.extend_bootinfo"
