@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-28 10:44:41.650848",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "print_format",
+  "stamp_x",
+  "stamp_y",
+  "stamp_page",
+  "stamp_width",
+  "stamp_height",
+  "stamp_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "print_format",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Print Format",
+   "options": "Print Format",
+   "reqd": 1
+  },
+  {
+   "default": "390",
+   "fieldname": "stamp_x",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stamp X"
+  },
+  {
+   "default": "10",
+   "fieldname": "stamp_y",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stamp Y"
+  },
+  {
+   "default": "Last Page",
+   "fieldname": "stamp_page",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stamp Page"
+  },
+  {
+   "default": "200",
+   "fieldname": "stamp_width",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stamp Width"
+  },
+  {
+   "default": "60",
+   "fieldname": "stamp_height",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stamp Height"
+  },
+  {
+   "default": "Digitally signed by %(signer)s\nTimestamp: %(ts)s",
+   "fieldname": "stamp_text",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Stamp Text"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-28 11:16:05.205558",
+ "modified_by": "Administrator",
+ "module": "DSC Integration",
+ "name": "DSC Format Setting Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
