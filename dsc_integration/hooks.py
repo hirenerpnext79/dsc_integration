@@ -138,13 +138,6 @@ app_include_js = "/assets/dsc_integration/js/dsc_core.js"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
 
 # Scheduled Tasks
 # ---------------

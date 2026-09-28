@@ -22,6 +22,12 @@ $(document).ready(function() {
         if (isLogin || isWorkflow) {
             // Determine user depending on context
             const usr = isLogin ? (options.args ? options.args.usr : options.usr) : (frappe.session && frappe.session.user);
+            const w_doctype = isWorkflow ? (typeof options.args.doc === 'string' ? JSON.parse(options.args.doc).doctype : options.args.doc.doctype) : null;
+            const w_docname = isWorkflow ? (typeof options.args.doc === 'string' ? JSON.parse(options.args.doc).name : options.args.doc.name) : null;
+            const workflow_req_url = '/api/method/dsc_integration.utils.workflow_approval.is_dsc_required';
+            const login_req_url = '/api/method/dsc_integration.utils.login.is_dsc_required';
+            const workflow_cert_url = '/api/method/dsc_integration.utils.workflow_approval.verify_workflow_certificate';
+            const login_cert_url = '/api/method/dsc_integration.utils.login.verify_certificate_mapping';
             
             const abortDSC = (msg) => {
                 if (msg) frappe.msgprint(msg);
@@ -58,8 +64,8 @@ $(document).ready(function() {
                 const requiredCheck = await new Promise((resolve, reject) => {
                     originalFrappeCall({
                         type: 'POST',
-                        url: '/api/method/dsc_integration.utils.login.is_dsc_required',
-                        args: { usr: usr },
+                        url: isWorkflow ? workflow_req_url : login_req_url,
+                        args: isWorkflow ? { doctype: w_doctype } : { usr: usr },
                         callback: resolve,
                         error: (err) => reject(err)
                     });
@@ -91,8 +97,8 @@ $(document).ready(function() {
                             const certCheck = await new Promise((resolve, reject) => {
                                 originalFrappeCall({
                                     type: 'POST',
-                                    url: '/api/method/dsc_integration.utils.login.verify_certificate_mapping',
-                                    args: { usr: usr, fingerprint: c.fingerprint_sha256 },
+                                    url: isWorkflow ? workflow_cert_url : login_cert_url,
+                                    args: isWorkflow ? { fingerprint: c.fingerprint_sha256, doctype: w_doctype, docname: w_docname } : { usr: usr, fingerprint: c.fingerprint_sha256 },
                                     callback: resolve,
                                     error: (err) => reject(err)
                                 });

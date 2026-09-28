@@ -242,4 +242,9 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
     file_doc.save(ignore_permissions=True)
     
     frappe.cache().delete_value(f"dsc_prep_{session_id}")
+    
+    cert_name = frappe.db.get_value("DSC Certificate", {"certificate_fingerprint": cert.sha256.hex().upper()}, "name")
+    from dsc_integration.utils.logger import log_dsc_action
+    log_dsc_action(mode="Signature", certificate=cert_name, reference_doctype=cached.get("doctype"), doc_id=cached.get("docname"))
+    
     return {"status": "success"}

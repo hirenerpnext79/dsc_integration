@@ -16,7 +16,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "DSC User Certificate",
-   "link_count": 4,
+   "link_count": 6,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -60,9 +60,29 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "DSC Format Setting",
+   "link_count": 0,
+   "link_to": "DSC Format Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HNS Approval Settings",
+   "link_count": 0,
+   "link_to": "HNS Approval Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-22 13:58:39.752005",
+ "modified": "2026-09-28 16:03:27.995794",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "Digital Signature Certificate",
