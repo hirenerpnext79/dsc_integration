@@ -8,9 +8,7 @@
   "agent_listen_port",
   "column_break_hmui",
   "hmac_secret",
-  "section_break_wmkg",
-  "supported_doctypes",
-  "signature_stamp_settings_tab",
+  "default_format_setting_tab",
   "stamp_x",
   "stamp_y",
   "stamp_page",
@@ -37,17 +35,6 @@
   {
    "fieldname": "column_break_hmui",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_wmkg",
-   "fieldtype": "Section Break"
-  },
-  {
-   "description": "Selected Doctype given option to the pdf sign with dsc",
-   "fieldname": "supported_doctypes",
-   "fieldtype": "Table",
-   "label": "Supported DocTypes",
-   "options": "DSC Supported Doctype"
   },
   {
    "default": "Digitally signed by %(signer)s\nTimestamp: %(ts)s",
@@ -92,24 +79,24 @@
    "label": "X Position"
   },
   {
-   "fieldname": "signature_stamp_settings_tab",
-   "fieldtype": "Tab Break",
-   "label": "Signature Stamp Settings"
-  },
-  {
    "fieldname": "column_break_bczl",
    "fieldtype": "Column Break"
   },
   {
    "fieldname": "section_break_kcig",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "default_format_setting_tab",
+   "fieldtype": "Tab Break",
+   "label": "Default Format Setting"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-26 11:40:47.341118",
+ "modified": "2026-09-28 11:27:38.315015",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Agent Settings",

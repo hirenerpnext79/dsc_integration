@@ -154,9 +154,21 @@ frappe.ui.form.on(doctype, {
             const PORT = 4645;
             
             try {
-                let print_formats = frappe.meta.get_print_formats(frm.doctype);
                 let selected_format = await new Promise(resolve => {
-                    frappe.prompt([{label: 'Print Format', fieldname: 'print_format', fieldtype: 'Select', options: print_formats, default: print_formats[0], reqd: 1}], 
+                    frappe.prompt([{
+                        label: 'Print Format', 
+                        fieldname: 'print_format', 
+                        fieldtype: 'Link', 
+                        options: 'Print Format', 
+                        reqd: 1,
+                        get_query: function() {
+                            return {
+                                filters: {
+                                    doc_type: frm.doctype
+                                }
+                            }
+                        }
+                    }], 
                     (values) => resolve(values.print_format), __('Select Format'), __('Proceed'));
                 });
                 

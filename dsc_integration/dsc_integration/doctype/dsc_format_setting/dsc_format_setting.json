@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-28 10:44:42.491962",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ref_doctype",
+  "format_settings",
+  "default_format_setting_tab",
+  "stamp_x",
+  "stamp_y",
+  "stamp_page",
+  "column_break_bczl",
+  "stamp_width",
+  "stamp_height",
+  "section_break_kcig",
+  "stamp_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "ref_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "DocType",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "format_settings",
+   "fieldtype": "Table",
+   "label": "Format Settings",
+   "options": "DSC Format Setting Detail"
+  },
+  {
+   "default": "390",
+   "fieldname": "stamp_x",
+   "fieldtype": "Float",
+   "label": "X Position"
+  },
+  {
+   "default": "10",
+   "fieldname": "stamp_y",
+   "fieldtype": "Float",
+   "label": "Y Position"
+  },
+  {
+   "default": "Last Page",
+   "fieldname": "stamp_page",
+   "fieldtype": "Select",
+   "label": "Stamp Page",
+   "options": "Last Page\nFirst Page"
+  },
+  {
+   "fieldname": "column_break_bczl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "200",
+   "fieldname": "stamp_width",
+   "fieldtype": "Float",
+   "label": "Width"
+  },
+  {
+   "default": "60",
+   "fieldname": "stamp_height",
+   "fieldtype": "Float",
+   "label": "Height"
+  },
+  {
+   "fieldname": "section_break_kcig",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Digitally signed by %(signer)s\nTimestamp: %(ts)s",
+   "fieldname": "stamp_text",
+   "fieldtype": "Small Text",
+   "label": "Stamp Text"
+  },
+  {
+   "fieldname": "default_format_setting_tab",
+   "fieldtype": "Tab Break",
+   "label": "Default Format Setting"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-28 11:01:18.129650",
+ "modified_by": "Administrator",
+ "module": "DSC Integration",
+ "name": "DSC Format Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

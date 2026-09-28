@@ -20,6 +20,41 @@ except ImportError:
     PYHANKO_AVAILABLE = False
 
 
+def get_stamp_settings(doctype, print_format, agent_settings):
+    settings = {
+        "stamp_x": agent_settings.get("stamp_x") or 10,
+        "stamp_y": agent_settings.get("stamp_y") or 10,
+        "stamp_width": agent_settings.get("stamp_width") or 200,
+        "stamp_height": agent_settings.get("stamp_height") or 60,
+        "stamp_page": agent_settings.get("stamp_page"),
+        "stamp_text": agent_settings.get("stamp_text") or "Digitally signed by %(signer)s\nDate: %(ts)s"
+    }
+    
+    format_setting_name = frappe.db.get_value("DSC Format Setting", {"ref_doctype": doctype}, "name")
+    if not format_setting_name:
+        return settings
+        
+    doc = frappe.get_doc("DSC Format Setting", format_setting_name)
+    
+    for row in doc.format_settings:
+        if row.print_format == print_format:
+            if row.stamp_x: settings["stamp_x"] = row.stamp_x
+            if row.stamp_y: settings["stamp_y"] = row.stamp_y
+            if row.stamp_width: settings["stamp_width"] = row.stamp_width
+            if row.stamp_height: settings["stamp_height"] = row.stamp_height
+            if row.stamp_page: settings["stamp_page"] = row.stamp_page
+            if row.stamp_text: settings["stamp_text"] = row.stamp_text
+            return settings
+            
+    if doc.stamp_x: settings["stamp_x"] = doc.stamp_x
+    if doc.stamp_y: settings["stamp_y"] = doc.stamp_y
+    if doc.stamp_width: settings["stamp_width"] = doc.stamp_width
+    if doc.stamp_height: settings["stamp_height"] = doc.stamp_height
+    if doc.stamp_page: settings["stamp_page"] = doc.stamp_page
+    if doc.stamp_text: settings["stamp_text"] = doc.stamp_text
+    
+    return settings
+
 @frappe.whitelist()
 def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     if not PYHANKO_AVAILABLE:
@@ -51,12 +86,13 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     writer = copy_into_new_writer(reader)
     
     # Stamp Settings
-    stamp_x = int(settings.get("stamp_x") or 10)
-    stamp_y = int(settings.get("stamp_y") or 10)
-    stamp_width = int(settings.get("stamp_width") or 200)
-    stamp_height = int(settings.get("stamp_height") or 60)
-    stamp_page = settings.get("stamp_page")
-    stamp_text = settings.get("stamp_text") or "Digitally signed by %(signer)s\nDate: %(ts)s"
+    stamp_settings = get_stamp_settings(doctype, print_format, settings)
+    stamp_x = int(stamp_settings.get("stamp_x") or 10)
+    stamp_y = int(stamp_settings.get("stamp_y") or 10)
+    stamp_width = int(stamp_settings.get("stamp_width") or 200)
+    stamp_height = int(stamp_settings.get("stamp_height") or 60)
+    stamp_page = stamp_settings.get("stamp_page")
+    stamp_text = stamp_settings.get("stamp_text") or "Digitally signed by %(signer)s\nDate: %(ts)s"
 
     try:
         total_pages = int(reader.root['/Pages']['/Count'])
