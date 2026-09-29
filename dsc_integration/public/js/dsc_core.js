@@ -186,13 +186,16 @@ frappe.ui.form.on(doctype, {
                     throw new Error(__("DSC Bridge is not running. Please start the DSC Bridge to perform this action."));
                 }
                 if (!certResp.ok) throw new Error(__("Could not read certificate. Is DSC Bridge running?"));
-                const certBody = await certResp.json();
-                if (!certBody.certs || !certBody.certs.length) throw new Error("No certificate found on token.");
-                
+                const certData = await certResp.json();
+
+                if (!certData || !certData.certs || certData.certs.length === 0) {
+                    throw new Error("No DSC token detected. Please insert your token.");
+                }
+
                 let validCert = null;
                 let lastErrorMsg = null;
-                for (let i = 0; i < certBody.certs.length; i++) {
-                    let c = certBody.certs[i];
+                for (let i = 0; i < certData.certs.length; i++) {
+                    let c = certData.certs[i];
                     if (c && c.fingerprint_sha256) {
                         try {
                             const certCheck = await new Promise((resolve, reject) => {
@@ -253,7 +256,18 @@ frappe.ui.form.on(doctype, {
                 }
                 if (!signResp.ok) {
                     const errorText = await signResp.text();
-                    throw new Error("Bridge Error: " + errorText);
+                    let errMsg = "Bridge Error: " + errorText;
+                    try {
+                        const errJson = JSON.parse(errorText);
+                        if (errJson.error === "PIN_INCORRECT" || (errJson.message && errJson.message.includes("CKR_PIN_INCORRECT"))) {
+                            errMsg = __("The PIN entered for the DSC Token is incorrect. Please try again.");
+                        } else if (errJson.error === "TOKEN_NOT_FOUND" || (errJson.message && errJson.message.includes("TOKEN_NOT_FOUND"))) {
+                            errMsg = __("The DSC Token was not found. Please ensure it is plugged in.");
+                        } else if (errJson.message) {
+                            errMsg = __("DSC Token Error: ") + errJson.message;
+                        }
+                    } catch(e) { }
+                    throw new Error(errMsg);
                 }
                 const signedBody = await signResp.json();
                 

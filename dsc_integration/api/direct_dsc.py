@@ -1,4 +1,5 @@
 import frappe
+import os
 import asyncio
 import io
 import base64
@@ -169,7 +170,33 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     out_stream = io.BytesIO()
     
     try:
-        stamp_style = TextStampStyle(stamp_text=stamp_text, border_width=1)
+        use_custom_watermark = frappe.utils.cint(settings.get("use_custom_watermark"))
+        doc_url = frappe.utils.get_url(f"/app/{doctype}/{docname}")
+
+        from pyhanko.pdf_utils.images import PdfImage
+        
+        border_width = int(settings.get("border_width") or 1)
+        bg_opacity = float(settings.get("background_opacity") or 0.4)
+        watermark_path = settings.get("custom_watermark")
+        
+        background_img = None
+        if use_custom_watermark and watermark_path:
+            if watermark_path.startswith('/private/'):
+                full_path = frappe.get_site_path(watermark_path.lstrip('/'))
+            else:
+                full_path = frappe.get_site_path('public', watermark_path.lstrip('/'))
+            if os.path.exists(full_path):
+                background_img = PdfImage(full_path)
+            else:
+                frappe.log_error("DSC Watermark Error", f"Watermark file not found at {full_path}")
+        
+        stamp_style = TextStampStyle(
+            stamp_text=stamp_text, 
+            border_width=border_width, 
+            background_opacity=bg_opacity,
+            background=background_img
+        )
+                
         sig_meta = signers.PdfSignatureMetadata(field_name='Signature1')
         pdf_signer = signers.PdfSigner(sig_meta, signer=signer, stamp_style=stamp_style)
     except Exception as e:
@@ -181,7 +208,7 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
         return await pdf_signer.async_digest_doc_for_signing(
             pdf_out=writer,
             output=out_stream,
-            bytes_reserved=8192
+            bytes_reserved=16384
         )
         
     prep_digest_obj, _tbs_doc, _ = asyncio.run(prepare())
@@ -203,10 +230,12 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     
     hmac_signature = hmac.new(hmac_secret.encode("utf-8"), mac_payload, hashlib.sha256).hexdigest()
     
+    with open(f"/tmp/dsc_prep_{session_id}.pdf", "wb") as f:
+        f.write(out_stream.getvalue())
+        
     frappe.cache().set_value(
         f"dsc_prep_{session_id}", 
         {
-            "pdf_bytes": out_stream.getvalue(), 
             "cert_der_b64": cert_der_b64, 
             "doctype": doctype, 
             "docname": docname,
@@ -232,8 +261,11 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
         frappe.throw("pyHanko is not installed")
         
     cached = frappe.cache().get_value(f"dsc_prep_{session_id}")
-    if not cached:
+    if not cached or not os.path.exists(f"/tmp/dsc_prep_{session_id}.pdf"):
         frappe.throw("Signing session expired or invalid.")
+        
+    with open(f"/tmp/dsc_prep_{session_id}.pdf", "rb") as f:
+        pdf_bytes = f.read()
         
     try:
         signature_bytes = bytes.fromhex(signature_hex)
@@ -281,8 +313,16 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
         reserved_region_end=cached["reserved_region_end"],
     )
     
-    output = io.BytesIO(cached["pdf_bytes"])
-    prep_digest_obj.fill_with_cms(output, cms_bytes)
+    output = io.BytesIO(pdf_bytes)
+    from pyhanko.sign.signers.pdf_signer import PdfTBSDocument
+    import asyncio
+    
+    # We must use async_finish_signing instead of fill_with_cms to ensure
+    # all background image XObjects and cross-references are properly finalized
+    # in the PDF stream according to pyHanko docs.
+    asyncio.run(PdfTBSDocument.async_finish_signing(
+        output, prep_digest_obj, cms_bytes
+    ))
     
     file_doc = frappe.new_doc("File")
     file_doc.file_name = f"{cached['docname']}_DSC_Signed.pdf"
