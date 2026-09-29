@@ -22,6 +22,12 @@ $(document).ready(function() {
         if (isLogin || isWorkflow) {
             // Determine user depending on context
             const usr = isLogin ? (options.args ? options.args.usr : options.usr) : (frappe.session && frappe.session.user);
+            const w_doctype = isWorkflow ? (typeof options.args.doc === 'string' ? JSON.parse(options.args.doc).doctype : options.args.doc.doctype) : null;
+            const w_docname = isWorkflow ? (typeof options.args.doc === 'string' ? JSON.parse(options.args.doc).name : options.args.doc.name) : null;
+            const workflow_req_url = '/api/method/dsc_integration.utils.workflow_approval.is_dsc_required';
+            const login_req_url = '/api/method/dsc_integration.utils.login.is_dsc_required';
+            const workflow_cert_url = '/api/method/dsc_integration.utils.workflow_approval.verify_workflow_certificate';
+            const login_cert_url = '/api/method/dsc_integration.utils.login.verify_certificate_mapping';
             
             const abortDSC = (msg) => {
                 if (msg) frappe.msgprint(msg);
@@ -58,8 +64,8 @@ $(document).ready(function() {
                 const requiredCheck = await new Promise((resolve, reject) => {
                     originalFrappeCall({
                         type: 'POST',
-                        url: '/api/method/dsc_integration.utils.login.is_dsc_required',
-                        args: { usr: usr },
+                        url: isWorkflow ? workflow_req_url : login_req_url,
+                        args: isWorkflow ? { doctype: w_doctype } : { usr: usr },
                         callback: resolve,
                         error: (err) => reject(err)
                     });
@@ -91,8 +97,8 @@ $(document).ready(function() {
                             const certCheck = await new Promise((resolve, reject) => {
                                 originalFrappeCall({
                                     type: 'POST',
-                                    url: '/api/method/dsc_integration.utils.login.verify_certificate_mapping',
-                                    args: { usr: usr, fingerprint: c.fingerprint_sha256 },
+                                    url: isWorkflow ? workflow_cert_url : login_cert_url,
+                                    args: isWorkflow ? { fingerprint: c.fingerprint_sha256, doctype: w_doctype, docname: w_docname } : { usr: usr, fingerprint: c.fingerprint_sha256 },
                                     callback: resolve,
                                     error: (err) => reject(err)
                                 });
@@ -180,10 +186,47 @@ frappe.ui.form.on(doctype, {
                     throw new Error(__("DSC Bridge is not running. Please start the DSC Bridge to perform this action."));
                 }
                 if (!certResp.ok) throw new Error(__("Could not read certificate. Is DSC Bridge running?"));
-                const certBody = await certResp.json();
-                if (!certBody.certs || !certBody.certs.length) throw new Error("No certificate found on token.");
+                const certData = await certResp.json();
+
+                if (!certData || !certData.certs || certData.certs.length === 0) {
+                    throw new Error("No DSC token detected. Please insert your token.");
+                }
+
+                let validCert = null;
+                let lastErrorMsg = null;
+                for (let i = 0; i < certData.certs.length; i++) {
+                    let c = certData.certs[i];
+                    if (c && c.fingerprint_sha256) {
+                        try {
+                            const certCheck = await new Promise((resolve, reject) => {
+                                frappe.call({
+                                    type: 'POST',
+                                    url: '/api/method/dsc_integration.api.direct_dsc.verify_direct_certificate',
+                                    args: { fingerprint: c.fingerprint_sha256, doctype: frm.doctype, docname: frm.docname },
+                                    callback: resolve,
+                                    error: (err) => reject(err)
+                                });
+                            });
+                            
+                            if (certCheck && certCheck.message) {
+                                if (certCheck.message.status) {
+                                    validCert = c;
+                                    break;
+                                } else {
+                                    lastErrorMsg = certCheck.message.msg;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
                 
-                const cert_der_b64 = certBody.certs[0].cert_der_b64;
+                if (!validCert) {
+                    throw new Error(lastErrorMsg ? lastErrorMsg : __('None of the detected DSC Certificates are assigned to you for signing this document.'));
+                }
+                
+                const cert_der_b64 = validCert.cert_der_b64;
                 
                 frappe.show_alert({message: __('Preparing PDF...'), indicator: 'blue'});
                 const initResp = await frappe.call({
@@ -204,7 +247,7 @@ frappe.ui.form.on(doctype, {
                         method: "POST", mode: "cors", headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             session_id: session.session_id, hash_to_sign: session.hash_to_sign,
-                            hash_algorithm: session.hash_algorithm, expected_fingerprint: certBody.certs[0].fingerprint_sha256,
+                            hash_algorithm: session.hash_algorithm, expected_fingerprint: validCert.fingerprint_sha256,
                             pin: pin, timestamp: session.hmac_timestamp, nonce: session.hmac_nonce, hmac: session.hmac_signature
                         })
                     });
@@ -213,7 +256,18 @@ frappe.ui.form.on(doctype, {
                 }
                 if (!signResp.ok) {
                     const errorText = await signResp.text();
-                    throw new Error("Bridge Error: " + errorText);
+                    let errMsg = "Bridge Error: " + errorText;
+                    try {
+                        const errJson = JSON.parse(errorText);
+                        if (errJson.error === "PIN_INCORRECT" || (errJson.message && errJson.message.includes("CKR_PIN_INCORRECT"))) {
+                            errMsg = __("The PIN entered for the DSC Token is incorrect. Please try again.");
+                        } else if (errJson.error === "TOKEN_NOT_FOUND" || (errJson.message && errJson.message.includes("TOKEN_NOT_FOUND"))) {
+                            errMsg = __("The DSC Token was not found. Please ensure it is plugged in.");
+                        } else if (errJson.message) {
+                            errMsg = __("DSC Token Error: ") + errJson.message;
+                        }
+                    } catch(e) { }
+                    throw new Error(errMsg);
                 }
                 const signedBody = await signResp.json();
                 

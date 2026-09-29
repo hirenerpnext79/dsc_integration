@@ -15,6 +15,10 @@
   "column_break_bczl",
   "stamp_width",
   "stamp_height",
+  "use_custom_watermark",
+  "custom_watermark",
+  "border_width",
+  "background_opacity",
   "section_break_kcig",
   "stamp_text"
  ],
@@ -90,13 +94,41 @@
    "fieldname": "default_format_setting_tab",
    "fieldtype": "Tab Break",
    "label": "Default Format Setting"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_custom_watermark",
+   "fieldtype": "Check",
+   "label": "Use Custom Watermark and Border"
+  },
+  {
+   "depends_on": "eval:doc.use_custom_watermark==1",
+   "fieldname": "custom_watermark",
+   "fieldtype": "Attach Image",
+   "label": "Custom Watermark Image"
+  },
+  {
+   "default": "0.4",
+   "depends_on": "eval:doc.use_custom_watermark==1",
+   "description": "Value between 0 and 1. 1 is fully solid, 0 is fully transparent.",
+   "fieldname": "background_opacity",
+   "fieldtype": "Float",
+   "label": "Background Opacity"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.use_custom_watermark==1",
+   "description": "Width of the signature box",
+   "fieldname": "border_width",
+   "fieldtype": "Float",
+   "label": "Border Width"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-28 11:27:38.315015",
+ "modified": "2026-09-29 12:19:55.309791",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Agent Settings",

@@ -16,7 +16,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "DSC User Certificate",
-   "link_count": 4,
+   "link_count": 7,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -24,7 +24,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "DSC Certificate",
+   "label": "HNS DSC Certificate",
    "link_count": 0,
    "link_to": "DSC Certificate",
    "link_type": "DocType",
@@ -34,7 +34,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "DSC Registration",
+   "label": "HNS DSC Registration",
    "link_count": 0,
    "link_to": "DSC Registration",
    "link_type": "DocType",
@@ -44,7 +44,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "DSC Agent Settings",
+   "label": "HNS DSC Agent Settings",
    "link_count": 0,
    "link_to": "DSC Agent Settings",
    "link_type": "DocType",
@@ -60,9 +60,39 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HNS DSC Format Setting",
+   "link_count": 0,
+   "link_to": "DSC Format Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HNS Approval Settings",
+   "link_count": 0,
+   "link_to": "HNS Approval Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HNS DSC Log",
+   "link_count": 0,
+   "link_to": "HNS DSC Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-22 13:58:39.752005",
+ "modified": "2026-09-29 10:08:06.617163",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "Digital Signature Certificate",

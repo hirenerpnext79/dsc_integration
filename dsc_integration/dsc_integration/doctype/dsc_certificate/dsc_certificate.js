@@ -180,7 +180,21 @@ async function register_certificate_from_token(frm) {
 	try {
 		frappe.dom.freeze(__("Connecting to DSC Bridge..."));
 		await ensure_paired();
-		certs = await fetch_token_certs();
+		let raw_certs = await fetch_token_certs();
+		
+		let r = await frappe.call({
+			method: "dsc_integration.dsc_integration.doctype.dsc_certificate.dsc_certificate.filter_signer_certificates",
+			args: {
+				certs_b64_list: JSON.stringify(raw_certs)
+			}
+		});
+		
+		if (r.message && r.message.length > 0) {
+			certs = r.message;
+		} else {
+			frappe.throw({ title: __("Register Certificate"), message: __("No valid signing certificates (with digitalSignature key usage) found on the token.") });
+			return;
+		}
 	} catch (e) {
 		frappe.throw({ title: __("Register Certificate"), message: e.message });
 		return;

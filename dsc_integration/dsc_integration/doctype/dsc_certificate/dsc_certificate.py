@@ -70,3 +70,28 @@ def extract_certificate_from_der(cert_der_b64):
 		"certificate_fingerprint": fingerprint,
 		"certificate_details": json.dumps(full_details, indent=2)
 	}
+
+@frappe.whitelist()
+def filter_signer_certificates(certs_b64_list):
+	import json
+	certs = json.loads(certs_b64_list)
+	signer_certs = []
+	for cert_obj in certs:
+		if not cert_obj.get('cert_der_b64'):
+			continue
+		try:
+			cert_der = base64.b64decode(cert_obj['cert_der_b64'])
+			cert = x509.load_der_x509_certificate(cert_der, default_backend())
+			
+			try:
+				key_usage = cert.extensions.get_extension_for_class(x509.KeyUsage).value
+				if key_usage.digital_signature or key_usage.non_repudiation:
+					signer_certs.append(cert_obj)
+			except x509.ExtensionNotFound:
+				# If no key usage is defined, we might include it just in case, or exclude it. 
+				# Standard DSC tokens always define key usage.
+				pass
+		except Exception:
+			pass
+			
+	return signer_certs

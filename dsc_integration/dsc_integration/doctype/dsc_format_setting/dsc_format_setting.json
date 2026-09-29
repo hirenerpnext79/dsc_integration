@@ -1,13 +1,16 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:",
  "creation": "2026-09-28 10:44:42.491962",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "ref_doctype",
   "format_settings",
+  "approval_users",
   "default_format_setting_tab",
   "stamp_x",
   "stamp_y",
@@ -25,7 +28,8 @@
    "in_list_view": 1,
    "label": "DocType",
    "options": "DocType",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "format_settings",
@@ -82,15 +86,29 @@
    "fieldname": "default_format_setting_tab",
    "fieldtype": "Tab Break",
    "label": "Default Format Setting"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Naming Series",
+   "options": "DSC-FRM-.#####"
+  },
+  {
+   "fieldname": "approval_users",
+   "fieldtype": "Table",
+   "label": "Approval Users",
+   "options": "HNS Approval User"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-28 11:01:18.129650",
+ "modified": "2026-09-28 15:17:07.105153",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Format Setting",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

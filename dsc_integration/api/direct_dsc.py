@@ -1,4 +1,5 @@
 import frappe
+import os
 import asyncio
 import io
 import base64
@@ -54,6 +55,57 @@ def get_stamp_settings(doctype, print_format, agent_settings):
     if doc.stamp_text: settings["stamp_text"] = doc.stamp_text
     
     return settings
+
+@frappe.whitelist()
+def verify_direct_certificate(fingerprint, doctype=None, docname=None):
+    current_user = frappe.session.user
+    if current_user == 'Administrator':
+        return {'status': True}
+        
+    if not fingerprint:
+        return {'status': False, 'msg': 'Missing DSC Certificate fingerprint.'}
+        
+    fingerprint = fingerprint.upper()
+    
+    if not doctype:
+        return {'status': False, 'msg': 'Missing DocType.'}
+        
+    settings_name = frappe.db.get_value('DSC Format Setting', {'ref_doctype': doctype}, 'name')
+    if not settings_name:
+        return {'status': False, 'msg': 'No Approval Settings found for this DocType.'}
+        
+    user_row = frappe.db.get_value(
+        "HNS Approval User",
+        {"parent": settings_name, "parenttype": "DSC Format Setting", "user": current_user},
+        ["name", "dsc_allowed"],
+        as_dict=True
+    )
+    
+    if not user_row:
+        user_count = frappe.db.count("HNS Approval User", {"parent": settings_name, "parenttype": "DSC Format Setting"})
+        if user_count == 0:
+            return {'status': True}
+        return {'status': False, 'msg': 'You are not authorized to perform this action.'}
+        
+    dsc_allowed_ref = user_row.dsc_allowed
+    
+    if not dsc_allowed_ref:
+        return {'status': True}
+        
+    assigned_fingerprint = frappe.db.get_value('DSC Certificate', dsc_allowed_ref, 'certificate_fingerprint')
+    
+    if assigned_fingerprint and assigned_fingerprint.upper() == fingerprint:
+        allowed_users = frappe.db.get_all('DSC Certificate Users', filters={'parent': dsc_allowed_ref, 'parenttype': 'DSC Certificate'}, pluck='user')
+        if allowed_users and current_user not in allowed_users:
+            return {'status': False, 'msg': 'You are not authorized to use this specific DSC Certificate.'}
+        
+        cert_name = frappe.db.get_value("DSC Certificate", {"certificate_fingerprint": fingerprint}, "name")
+        from dsc_integration.utils.logger import log_dsc_action
+        log_dsc_action(mode="Approval", certificate=cert_name, reference_doctype=doctype, doc_id=docname)
+        
+        return {'status': True}
+        
+    return {'status': False, 'msg': 'This DSC Certificate is not assigned to you for pdf signing.'}
 
 @frappe.whitelist()
 def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
@@ -118,7 +170,33 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     out_stream = io.BytesIO()
     
     try:
-        stamp_style = TextStampStyle(stamp_text=stamp_text, border_width=1)
+        use_custom_watermark = frappe.utils.cint(settings.get("use_custom_watermark"))
+        doc_url = frappe.utils.get_url(f"/app/{doctype}/{docname}")
+
+        from pyhanko.pdf_utils.images import PdfImage
+        
+        border_width = int(settings.get("border_width") or 1)
+        bg_opacity = float(settings.get("background_opacity") or 0.4)
+        watermark_path = settings.get("custom_watermark")
+        
+        background_img = None
+        if use_custom_watermark and watermark_path:
+            if watermark_path.startswith('/private/'):
+                full_path = frappe.get_site_path(watermark_path.lstrip('/'))
+            else:
+                full_path = frappe.get_site_path('public', watermark_path.lstrip('/'))
+            if os.path.exists(full_path):
+                background_img = PdfImage(full_path)
+            else:
+                frappe.log_error("DSC Watermark Error", f"Watermark file not found at {full_path}")
+        
+        stamp_style = TextStampStyle(
+            stamp_text=stamp_text, 
+            border_width=border_width, 
+            background_opacity=bg_opacity,
+            background=background_img
+        )
+                
         sig_meta = signers.PdfSignatureMetadata(field_name='Signature1')
         pdf_signer = signers.PdfSigner(sig_meta, signer=signer, stamp_style=stamp_style)
     except Exception as e:
@@ -130,7 +208,7 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
         return await pdf_signer.async_digest_doc_for_signing(
             pdf_out=writer,
             output=out_stream,
-            bytes_reserved=8192
+            bytes_reserved=16384
         )
         
     prep_digest_obj, _tbs_doc, _ = asyncio.run(prepare())
@@ -152,10 +230,12 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
     
     hmac_signature = hmac.new(hmac_secret.encode("utf-8"), mac_payload, hashlib.sha256).hexdigest()
     
+    with open(f"/tmp/dsc_prep_{session_id}.pdf", "wb") as f:
+        f.write(out_stream.getvalue())
+        
     frappe.cache().set_value(
         f"dsc_prep_{session_id}", 
         {
-            "pdf_bytes": out_stream.getvalue(), 
             "cert_der_b64": cert_der_b64, 
             "doctype": doctype, 
             "docname": docname,
@@ -181,8 +261,11 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
         frappe.throw("pyHanko is not installed")
         
     cached = frappe.cache().get_value(f"dsc_prep_{session_id}")
-    if not cached:
+    if not cached or not os.path.exists(f"/tmp/dsc_prep_{session_id}.pdf"):
         frappe.throw("Signing session expired or invalid.")
+        
+    with open(f"/tmp/dsc_prep_{session_id}.pdf", "rb") as f:
+        pdf_bytes = f.read()
         
     try:
         signature_bytes = bytes.fromhex(signature_hex)
@@ -230,8 +313,16 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
         reserved_region_end=cached["reserved_region_end"],
     )
     
-    output = io.BytesIO(cached["pdf_bytes"])
-    prep_digest_obj.fill_with_cms(output, cms_bytes)
+    output = io.BytesIO(pdf_bytes)
+    from pyhanko.sign.signers.pdf_signer import PdfTBSDocument
+    import asyncio
+    
+    # We must use async_finish_signing instead of fill_with_cms to ensure
+    # all background image XObjects and cross-references are properly finalized
+    # in the PDF stream according to pyHanko docs.
+    asyncio.run(PdfTBSDocument.async_finish_signing(
+        output, prep_digest_obj, cms_bytes
+    ))
     
     file_doc = frappe.new_doc("File")
     file_doc.file_name = f"{cached['docname']}_DSC_Signed.pdf"
@@ -242,4 +333,9 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
     file_doc.save(ignore_permissions=True)
     
     frappe.cache().delete_value(f"dsc_prep_{session_id}")
+    
+    cert_name = frappe.db.get_value("DSC Certificate", {"certificate_fingerprint": cert.sha256.hex().upper()}, "name")
+    from dsc_integration.utils.logger import log_dsc_action
+    log_dsc_action(mode="Signature", certificate=cert_name, reference_doctype=cached.get("doctype"), doc_id=cached.get("docname"))
+    
     return {"status": "success"}
