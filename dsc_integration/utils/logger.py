@@ -8,9 +8,13 @@ def log_dsc_action(mode, certificate=None, reference_doctype=None, doc_id=None):
 
         mac_address = frappe.request.headers.get('X-MAC-Address') if getattr(frappe, "request", None) else None
         
+        import requests
         ip_address = None
-        if hasattr(frappe.local, "request_ip"):
-            ip_address = frappe.local.request_ip
+        try:
+            ip_address = requests.get('https://api.ipify.org', timeout=3).text
+        except Exception:
+            if getattr(frappe, "request", None):
+                ip_address = frappe.request.remote_addr
 
         doc = frappe.get_doc({
             'doctype': 'HNS DSC Log',
