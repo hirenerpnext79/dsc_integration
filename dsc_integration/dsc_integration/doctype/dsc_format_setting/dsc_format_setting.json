@@ -10,6 +10,7 @@
   "naming_series",
   "ref_doctype",
   "format_settings",
+  "approval_users",
   "default_format_setting_tab",
   "stamp_x",
   "stamp_y",
@@ -92,6 +93,12 @@
    "in_list_view": 1,
    "label": "Naming Series",
    "options": "DSC-FRM-.#####"
+  },
+  {
+   "fieldname": "approval_users",
+   "fieldtype": "Table",
+   "label": "Approval Users",
+   "options": "HNS Approval User"
   }
  ],
  "grid_page_length": 50,

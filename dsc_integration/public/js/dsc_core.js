@@ -189,7 +189,41 @@ frappe.ui.form.on(doctype, {
                 const certBody = await certResp.json();
                 if (!certBody.certs || !certBody.certs.length) throw new Error("No certificate found on token.");
                 
-                const cert_der_b64 = certBody.certs[0].cert_der_b64;
+                let validCert = null;
+                let lastErrorMsg = null;
+                for (let i = 0; i < certBody.certs.length; i++) {
+                    let c = certBody.certs[i];
+                    if (c && c.fingerprint_sha256) {
+                        try {
+                            const certCheck = await new Promise((resolve, reject) => {
+                                frappe.call({
+                                    type: 'POST',
+                                    url: '/api/method/dsc_integration.api.direct_dsc.verify_direct_certificate',
+                                    args: { fingerprint: c.fingerprint_sha256, doctype: frm.doctype, docname: frm.docname },
+                                    callback: resolve,
+                                    error: (err) => reject(err)
+                                });
+                            });
+                            
+                            if (certCheck && certCheck.message) {
+                                if (certCheck.message.status) {
+                                    validCert = c;
+                                    break;
+                                } else {
+                                    lastErrorMsg = certCheck.message.msg;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
+                
+                if (!validCert) {
+                    throw new Error(lastErrorMsg ? lastErrorMsg : __('None of the detected DSC Certificates are assigned to you for signing this document.'));
+                }
+                
+                const cert_der_b64 = validCert.cert_der_b64;
                 
                 frappe.show_alert({message: __('Preparing PDF...'), indicator: 'blue'});
                 const initResp = await frappe.call({
@@ -210,7 +244,7 @@ frappe.ui.form.on(doctype, {
                         method: "POST", mode: "cors", headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             session_id: session.session_id, hash_to_sign: session.hash_to_sign,
-                            hash_algorithm: session.hash_algorithm, expected_fingerprint: certBody.certs[0].fingerprint_sha256,
+                            hash_algorithm: session.hash_algorithm, expected_fingerprint: validCert.fingerprint_sha256,
                             pin: pin, timestamp: session.hmac_timestamp, nonce: session.hmac_nonce, hmac: session.hmac_signature
                         })
                     });
