@@ -77,7 +77,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "Digitally signed by %(signer)s\nTimestamp: %(ts)s",
+   "default": "Signed by: %(signer)s\nTimestamp: %(ts)s",
    "fieldname": "stamp_text",
    "fieldtype": "Small Text",
    "label": "Stamp Text"
@@ -90,7 +90,6 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Naming Series",
    "options": "DSC-FRM-.#####"
   },
@@ -104,7 +103,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-28 15:17:07.105153",
+ "modified": "2026-09-29 16:21:49.103436",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Format Setting",

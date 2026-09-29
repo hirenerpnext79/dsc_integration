@@ -41,7 +41,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Digitally signed by %(signer)s\nTimestamp: %(ts)s",
+   "default": "Signed by: %(signer)s\nTimestamp: %(ts)s",
    "description": "Use %(signer)s and %(ts)s as placeholders",
    "fieldname": "stamp_text",
    "fieldtype": "Small Text",
@@ -128,7 +128,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-29 12:19:55.309791",
+ "modified": "2026-09-29 16:22:16.203112",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Agent Settings",
