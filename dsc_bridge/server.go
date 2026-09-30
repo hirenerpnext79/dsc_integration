@@ -109,11 +109,7 @@ func corsMiddleware(next http.Handler, ks *Keystore) http.Handler {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-DSC-Site-Token")
 			w.Header().Set("Access-Control-Max-Age", "3600")
 
-			// Chrome PNA opt-in — required when a page on a LAN/public IP fetches
-			// localhost. Only emitted for allowed origins, alongside ACAO.
-			if r.Header.Get("Access-Control-Request-Private-Network") == "true" {
-				w.Header().Set("Access-Control-Allow-Private-Network", "true")
-			}
+			w.Header().Set("Access-Control-Allow-Private-Network", "true")
 		}
 
 		// Handle preflight
