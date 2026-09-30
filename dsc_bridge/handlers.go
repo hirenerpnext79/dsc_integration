@@ -9,7 +9,6 @@ import (
 
 	"net"
 	"os"
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -463,17 +462,6 @@ func (h *Handlers) HandleMacAddress(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"mac_address": mac})
 }
 
-func getMacAddress() string {
-	interfaces, err := net.Interfaces()
-	if err == nil {
-		for _, i := range interfaces {
-			if i.Flags&net.FlagUp != 0 && bytes.Compare(i.HardwareAddr, nil) != 0 {
-				return i.HardwareAddr.String()
-			}
-		}
-	}
-	return ""
-}
 
 func getTechDetails() TechDetails {
 	var details TechDetails

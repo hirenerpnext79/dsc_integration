@@ -9,6 +9,10 @@
  "field_order": [
   "naming_series",
   "ref_doctype",
+  "column_break_qyvt",
+  "dsc_allowed",
+  "is_active",
+  "section_break_wcma",
   "format_settings",
   "approval_users",
   "default_format_setting_tab",
@@ -98,12 +102,34 @@
    "fieldtype": "Table",
    "label": "Approval Users",
    "options": "HNS Approval User"
+  },
+  {
+   "fieldname": "column_break_qyvt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "dsc_allowed",
+   "fieldtype": "Table MultiSelect",
+   "label": "DSC Allowed",
+   "options": "DSC Allowed"
+  },
+  {
+   "fieldname": "section_break_wcma",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Active"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-29 16:21:49.103436",
+ "modified": "2026-09-30 10:04:39.120685",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "DSC Format Setting",

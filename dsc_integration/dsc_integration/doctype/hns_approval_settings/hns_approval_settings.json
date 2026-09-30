@@ -9,6 +9,10 @@
  "field_order": [
   "naming_series",
   "ref_doctype",
+  "column_break_xqkv",
+  "dsc_allowed",
+  "is_active",
+  "section_break_yylf",
   "approval_users"
  ],
  "fields": [
@@ -32,12 +36,34 @@
    "options": "DocType",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "column_break_xqkv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "dsc_allowed",
+   "fieldtype": "Table MultiSelect",
+   "label": "DSC Allowed",
+   "options": "DSC Allowed"
+  },
+  {
+   "fieldname": "section_break_yylf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Active"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-28 15:24:16.106984",
+ "modified": "2026-09-30 10:04:33.134063",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "HNS Approval Settings",
