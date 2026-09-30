@@ -70,9 +70,9 @@ def verify_direct_certificate(fingerprint, doctype=None, docname=None):
     if not doctype:
         return {'status': False, 'msg': 'Missing DocType.'}
         
-    settings_name = frappe.db.get_value('DSC Format Setting', {'ref_doctype': doctype}, 'name')
+    settings_name = frappe.db.get_value('DSC Format Setting', {'ref_doctype': doctype, 'is_active': 1}, 'name')
     if not settings_name:
-        return {'status': False, 'msg': 'No Approval Settings found for this DocType.'}
+        return {'status': True}
         
     user_row = frappe.db.get_value(
         "HNS Approval User",
@@ -81,31 +81,35 @@ def verify_direct_certificate(fingerprint, doctype=None, docname=None):
         as_dict=True
     )
     
-    if not user_row:
-        user_count = frappe.db.count("HNS Approval User", {"parent": settings_name, "parenttype": "DSC Format Setting"})
-        if user_count == 0:
+    if user_row:
+        dsc_allowed_ref = user_row.dsc_allowed
+        if not dsc_allowed_ref:
             return {'status': True}
-        return {'status': False, 'msg': 'You are not authorized to perform this action.'}
+            
+        assigned_fingerprint = frappe.db.get_value('DSC Certificate', dsc_allowed_ref, 'certificate_fingerprint')
         
-    dsc_allowed_ref = user_row.dsc_allowed
+        if assigned_fingerprint and assigned_fingerprint.upper() == fingerprint:
+            allowed_users = frappe.db.get_all('DSC Certificate Users', filters={'parent': dsc_allowed_ref, 'parenttype': 'DSC Certificate'}, pluck='user')
+            if allowed_users and current_user not in allowed_users:
+                return {'status': False, 'msg': 'You are not authorized to use this specific DSC Certificate.'}
+            return {'status': True}
+            
+        return {'status': False, 'msg': 'This DSC Certificate is not assigned to you.'}
+        
+    parent_dsc_allowed = frappe.db.get_all("DSC Allowed", filters={"parent": settings_name, "parenttype": "DSC Format Setting"}, pluck="dsc_allowed")
     
-    if not dsc_allowed_ref:
+    if not parent_dsc_allowed:
         return {'status': True}
         
-    assigned_fingerprint = frappe.db.get_value('DSC Certificate', dsc_allowed_ref, 'certificate_fingerprint')
-    
-    if assigned_fingerprint and assigned_fingerprint.upper() == fingerprint:
-        allowed_users = frappe.db.get_all('DSC Certificate Users', filters={'parent': dsc_allowed_ref, 'parenttype': 'DSC Certificate'}, pluck='user')
-        if allowed_users and current_user not in allowed_users:
-            return {'status': False, 'msg': 'You are not authorized to use this specific DSC Certificate.'}
-        
-        cert_name = frappe.db.get_value("DSC Certificate", {"certificate_fingerprint": fingerprint}, "name")
-        from dsc_integration.utils.logger import log_dsc_action
-        log_dsc_action(mode="Approval", certificate=cert_name, reference_doctype=doctype, doc_id=docname)
-        
-        return {'status': True}
-        
-    return {'status': False, 'msg': 'This DSC Certificate is not assigned to you for pdf signing.'}
+    for cert_name in parent_dsc_allowed:
+        assigned_fingerprint = frappe.db.get_value('DSC Certificate', cert_name, 'certificate_fingerprint')
+        if assigned_fingerprint and assigned_fingerprint.upper() == fingerprint:
+            allowed_users = frappe.db.get_all('DSC Certificate Users', filters={'parent': cert_name, 'parenttype': 'DSC Certificate'}, pluck='user')
+            if allowed_users and current_user not in allowed_users:
+                return {'status': False, 'msg': 'You are not authorized to use this specific DSC Certificate.'}
+            return {'status': True}
+            
+    return {'status': False, 'msg': 'This DSC Certificate is not authorized for this DocType.'}
 
 @frappe.whitelist()
 def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
@@ -242,6 +246,7 @@ def initiate_direct_sign(doctype, docname, print_format, cert_der_b64):
             "document_digest_hex": document_digest_bytes.hex(),
             "reserved_region_start": prep_digest_obj.reserved_region_start,
             "reserved_region_end": prep_digest_obj.reserved_region_end,
+            "print_format": print_format,
         }, 
         expires_in_sec=600
     )
@@ -336,6 +341,6 @@ def finalize_direct_sign(session_id, signature_hex, doctype=None, docname=None, 
     
     cert_name = frappe.db.get_value("DSC Certificate", {"certificate_fingerprint": cert.sha256.hex().upper()}, "name")
     from dsc_integration.utils.logger import log_dsc_action
-    log_dsc_action(mode="Signature", certificate=cert_name, reference_doctype=cached.get("doctype"), doc_id=cached.get("docname"))
+    log_dsc_action(mode="Signature", certificate=cert_name, reference_doctype=cached.get("doctype"), doc_id=cached.get("docname"), pdf_format=cached.get("print_format"), pdf_file_link=file_doc.file_url)
     
     return {"status": "success"}
