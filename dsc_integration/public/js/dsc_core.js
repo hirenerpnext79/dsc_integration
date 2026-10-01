@@ -14,12 +14,13 @@ $(document).ready(function() {
 
     const originalFrappeCall = frappe.call;
     
-    frappe.call = async function(options) {
+    frappe.call = function(options) {
         const method = options.method || options.cmd || (options.args && options.args.cmd);
         const isLogin = (method === 'login');
         const isWorkflow = (method === 'frappe.model.workflow.apply_workflow');
         
         if (isLogin || isWorkflow) {
+            let p_dsc = (async () => {
             // Determine user depending on context
             const usr = isLogin ? (options.args ? options.args.usr : options.usr) : (frappe.session && frappe.session.user);
             const w_doctype = isWorkflow ? (typeof options.args.doc === 'string' ? JSON.parse(options.args.doc).doctype : options.args.doc.doctype) : null;
@@ -191,6 +192,9 @@ $(document).ready(function() {
                 if (frappe.dom && frappe.dom.unfreeze) frappe.dom.unfreeze();
                 return abortDSC();
             }
+            })();
+            p_dsc.abort = function() { console.log("abort ignored"); };
+            return p_dsc;
         }
         
         // For all other methods, just pass through
