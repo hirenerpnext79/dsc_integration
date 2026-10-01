@@ -76,11 +76,59 @@ $(document).ready(function() {
                 }
 
                 // 3. Check if the bridge is alive and get certs
-                let certResponse;
                 try {
-                    certResponse = await fetch(BRIDGE_BASE + '/v1/certs');
+                    await fetch(BRIDGE_BASE + '/v1/status');
                 } catch(e) {
-                    return abortDSC(__('DSC Bridge is not running. Please start the DSC Bridge to perform this action.'));
+                    let certUrl = BRIDGE_BASE + '/v1/status';
+                    let msg = `DSC Bridge is not running. Please start the DSC Bridge to perform this action.`;
+                    return abortDSC(msg);
+                }
+
+                let certResponse;
+                let fetchCerts = async () => {
+                    return await fetch(BRIDGE_BASE + '/v1/certs', {
+                        headers: { "X-DSC-Site-Token": window.localStorage.getItem("dsc_site_token") || "" }
+                    });
+                };
+                
+                try {
+                    certResponse = await fetchCerts();
+                } catch(e) {
+                    // Start auto-pairing
+                    try {
+                        const codeResp = await new Promise((resolve, reject) => {
+                            originalFrappeCall({
+                                method: "dsc_integration.api.agent.generate_pairing_code",
+                                args: { usr: usr },
+                                callback: (r) => r && r.message ? resolve(r.message) : reject(new Error(__("Could not generate pairing code"))),
+                                error: () => reject(new Error(__("Could not generate pairing code")))
+                            });
+                        });
+                        
+                        const pairResp = await fetch(BRIDGE_BASE + '/v1/pair', {
+                            method: "POST",
+                            mode: "cors",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                pairing_code: codeResp.pairing_code,
+                                site_url: window.location.origin,
+                            }),
+                        });
+                        
+                        const pairBody = await pairResp.json().catch(() => ({}));
+                        if (pairResp.ok) {
+                            if (pairBody && pairBody.site_token) {
+                                window.localStorage.setItem("dsc_site_token", pairBody.site_token);
+                                window.localStorage.setItem("hmac_secret", pairBody.hmac_secret);
+                            }
+                            // Retry fetching certs now that site is paired
+                            certResponse = await fetchCerts();
+                        } else {
+                            return abortDSC(__("Could not pair this computer with the site.") + (pairBody.message ? " " + pairBody.message : ""));
+                        }
+                    } catch (pairErr) {
+                        return abortDSC(__('Failed to auto-pair with DSC Bridge. ' + pairErr.message));
+                    }
                 }
                 
                 const certData = await certResponse.json();
