@@ -14,8 +14,18 @@ def _pairing_key(code):
 def _hash_token(token):
 	return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-@frappe.whitelist()
-def generate_pairing_code():
+def _resolve_user(usr):
+	if not usr:
+		return None
+	user = frappe.db.get_value("User", {"email": usr}, "name")
+	if not user:
+		user = frappe.db.get_value("User", {"username": usr}, "name")
+	if not user:
+		user = frappe.db.get_value("User", {"mobile_no": usr}, "name")
+	return user or usr
+
+@frappe.whitelist(allow_guest=True)
+def generate_pairing_code(usr=None):
 	def _public_site_url():
 		req = getattr(frappe.local, "request", None)
 		if req is not None:
@@ -29,7 +39,7 @@ def generate_pairing_code():
 	site_url = _public_site_url()
 	code = secrets.token_urlsafe(16)
 	payload = {
-		"user": frappe.session.user,
+		"user": _resolve_user(usr) or frappe.session.user,
 		"created_at": str(now_datetime()),
 		"site_url": site_url,
 	}
