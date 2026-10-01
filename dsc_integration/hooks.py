@@ -247,4 +247,4 @@ before_request = ["dsc_integration.utils.login.check_mac_before_login"]
 
 
 # Bootinfo hook
-extend_bootinfo = "dsc_integration.utils.boot.extend_bootinfo"
+extend_bootinfo = ["dsc_integration.utils.boot.extend_bootinfo"]
