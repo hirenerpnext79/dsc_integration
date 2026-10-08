@@ -5,61 +5,54 @@ import frappe
 from frappe.model.document import Document
 import subprocess
 import re
-
 class HNSDeviceMap(Document):
-	pass
+	def before_insert(self):
+		self.created_at = frappe.utils.now_datetime()
+		self.created_by = frappe.session.user
+		
+	def before_save(self):
+		self.modifie_at = frappe.utils.now_datetime()
+		self.modifie_by = frappe.session.user
 
 @frappe.whitelist()
 def get_physical_mac():
-    """
-    Return the MAC address of an active physical Ethernet/Wi-Fi adapter.
-
-    Ignores:
-    - Hyper-V
-    - WSL
-    - Tailscale
-    - VPN
-    - Other virtual adapters
-    """
-
     command = [
-        "powershell.exe",
-        "-NoProfile",
-        "-ExecutionPolicy", "Bypass",
-        "-Command",
-        """
-        Get-NetAdapter |
-        Where-Object {
-            $_.Status -eq 'Up' -and
-            $_.HardwareInterface -eq $true
-        } |
-        Select-Object -First 1 -ExpandProperty MacAddress
-        """
+        'powershell.exe',
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-Command',
+        '''
+        $Mac = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $_.HardwareInterface -eq $true } | Select-Object -First 1 -ExpandProperty MacAddress
+        $Mac = if ($Mac) { $Mac -replace '-', ':' } else { '' }
+        
+        $ComputerSystem = Get-CimInstance Win32_ComputerSystem
+        $Enclosure = Get-CimInstance Win32_SystemEnclosure | Select-Object -First 1
+        $Chassis = if ($Enclosure) { $Enclosure.ChassisTypes[0] } else { 0 }
+        
+        $DeviceType = 'Desktop'
+        if ($Chassis -in 8, 9, 10, 11, 12, 14, 18, 21, 30, 31, 32) {
+            $DeviceType = 'Laptop'
+        }
+        
+        $data = @{
+            mac_address = $Mac
+            person_name = $ComputerSystem.Name
+            device_name = $ComputerSystem.Name
+            os = 'Window'
+            device_type = $DeviceType
+        }
+        $data | ConvertTo-Json
+        '''
     ]
 
     try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-
-        mac = result.stdout.strip()
-
-        if not mac:
-            raise RuntimeError("No active physical network adapter found")
-
-        # Normalize to XX:XX:XX:XX:XX:XX
-        mac = mac.replace("-", ":").upper()
-
-        if not re.fullmatch(
-            r"[0-9A-F]{2}(:[0-9A-F]{2}){5}",
-            mac
-        ):
-            raise RuntimeError(f"Invalid MAC address returned: {mac}")
-
-        return mac
+        import json
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            return None
+        
+        data = json.loads(result.stdout.strip())
+        return data
     except Exception as e:
         frappe.log_error("MAC Fetch Error", str(e))
         return None
