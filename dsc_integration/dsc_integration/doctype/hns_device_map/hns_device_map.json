@@ -1,18 +1,18 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "field:mac_address",
  "creation": "2026-09-22 12:29:20.008763",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "naming_series",
-  "person_name",
   "mac_address",
+  "person_name",
   "device_name",
   "os",
   "device_type",
   "dsc_required",
+  "disable",
   "column_break_ghhu",
   "allowed_user",
   "dsc_allowed_role",
@@ -20,13 +20,18 @@
   "section_break_uygh",
   "device_description",
   "column_break_kdlf",
-  "device_tech_details"
+  "device_tech_details",
+  "section_break_fkpw",
+  "created_at",
+  "created_by",
+  "column_break_ydtx",
+  "modifie_at",
+  "modifie_by"
  ],
  "fields": [
   {
    "fieldname": "mac_address",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "MAC Address",
    "read_only": 1,
    "unique": 1
@@ -35,6 +40,7 @@
    "fieldname": "device_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Device Name",
    "read_only": 1
   },
@@ -52,6 +58,7 @@
    "description": "Select specific ERP users who are allowed to access this PC through their login. Leave blank to allow all logged-in users.",
    "fieldname": "allowed_user",
    "fieldtype": "Table MultiSelect",
+   "in_standard_filter": 1,
    "label": "Allowed User",
    "options": "DSC Allowed User"
   },
@@ -59,6 +66,7 @@
    "description": "Select specific ERP role who are allowed to access this PC through their login. Leave blank to allow all logged-in users.",
    "fieldname": "dsc_allowed_role",
    "fieldtype": "Table MultiSelect",
+   "in_standard_filter": 1,
    "label": " DSC Allowed Role",
    "options": "DSC Allowed Role"
   },
@@ -67,6 +75,7 @@
    "fieldname": "dsc_required",
    "fieldtype": "Check",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "DSC Required"
   },
   {
@@ -74,7 +83,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Device Type",
-   "options": "PC\nLaptop\nMobile",
+   "options": "Desktop\nLaptop\nMobile",
    "read_only": 1
   },
   {
@@ -95,15 +104,9 @@
   {
    "fieldname": "dsc_allowed",
    "fieldtype": "Table MultiSelect",
+   "in_standard_filter": 1,
    "label": "DSC Allowed",
    "options": "DSC Allowed"
-  },
-  {
-   "default": "DEV-.YYYY.-",
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "DEV-.YYYY.-"
   },
   {
    "fieldname": "section_break_uygh",
@@ -117,19 +120,60 @@
    "fieldname": "person_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Person Name",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disable",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "section_break_fkpw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "created_at",
+   "fieldtype": "Datetime",
+   "label": "Created At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Data",
+   "label": "Created By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ydtx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "modifie_at",
+   "fieldtype": "Datetime",
+   "label": "Modified At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "modifie_by",
+   "fieldtype": "Data",
+   "label": "Modified By",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-24 11:34:49.514952",
+ "modified": "2026-10-07 15:14:55.320466",
  "modified_by": "Administrator",
  "module": "DSC Integration",
  "name": "HNS Device Map",
- "naming_rule": "By \"Naming Series\" field",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
