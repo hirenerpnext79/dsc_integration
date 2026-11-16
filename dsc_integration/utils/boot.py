@@ -2,7 +2,7 @@ import frappe
 
 def extend_bootinfo(bootinfo):
     try:
-        format_settings = frappe.get_all("DSC Format Setting", fields=["ref_doctype"], ignore_permissions=True)
+        format_settings = frappe.get_all("DSC Format Setting",filters={'is_active': True},fields=["ref_doctype"], ignore_permissions=True)
         bootinfo.dsc_supported_doctypes = [d.ref_doctype for d in format_settings]
     except Exception as e:
         frappe.log_error('DSC Integration: Bootinfo Error', str(e))
